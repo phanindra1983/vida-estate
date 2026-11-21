@@ -4,6 +4,7 @@ import { decide, canDecide } from "./approvals";
 import { saveImages } from "./cost";
 import { ALL_PROJECT_ROLES, APPROVAL_ACTIONS, ROLE_LABEL } from "./constants";
 import { docNo, inr, num, date, time, istDay } from "./format";
+import { speechConfigured, speechToEnglish, languageName, wordsToDigits, MAX_VOICE_SECONDS } from "./speech";
 import { send, tg, esc, downloadFile, notifyRoles, askLocation, sendClear, type Button } from "./telegram";
 
 /**
@@ -37,6 +38,7 @@ type TgMessage = {
   chat: { id: number; type: string }; date: number; from?: { first_name?: string }; text?: string;
   photo?: { file_id: string; width: number }[]; document?: { file_id: string; mime_type?: string };
   location?: { latitude: number; longitude: number }; forward_origin?: unknown; forward_date?: number;
+  voice?: { file_id: string; duration: number; mime_type?: string }; audio?: { file_id: string; duration: number; mime_type?: string };
 };
 type TgCallback = { id: string; data?: string; message?: { chat: { id: number }; message_id: number } };
 export type TgUpdate = { message?: TgMessage; callback_query?: TgCallback };
@@ -51,6 +53,8 @@ const HELP = [
   "/issues: open snags and safety issues",
   "/material: ask for material",
   "/approvals: what is waiting for you",
+  "",
+  "🎙 Where I ask you to type, you can send a voice note instead, in Telugu, Hindi or English (up to 30 seconds).",
   "/summary: today's picture across your projects (managers)",
   "/site: set the project's site location (project managers)",
   "/cancel: stop what you are doing",
@@ -64,7 +68,7 @@ export async function handleUpdate(u: TgUpdate) {
   const m = u.message;
   if (!m || m.chat.type !== "private") return; // the bot works in one-to-one chats only
   const chatId = String(m.chat.id);
-  const text = (m.text ?? "").trim();
+  let text = (m.text ?? "").trim();
 
   if (text.startsWith("/start")) return onStart(chatId, text.split(/\s+/)[1]);
 
@@ -92,6 +96,12 @@ export async function handleUpdate(u: TgUpdate) {
   if (text === "/summary") return (await import("./digest")).summaryFor(user, chatId);
 
   const state = parse(user.telegramState);
+  const voice = m.voice ?? m.audio;
+  if (voice) {
+    const heard = await hear(chatId, state, voice);
+    if (heard == null) return;
+    text = heard;
+  }
   if (m.location) return onLocation(chatId, user, state, m);
   const photo = m.photo?.length ? m.photo[m.photo.length - 1].file_id : m.document?.mime_type?.startsWith("image/") ? m.document.file_id : null;
   if (photo && state?.flow === "issue") return issuePhoto(chatId, user, state, photo);
@@ -281,8 +291,14 @@ async function materialText(chatId: string, user: BotUser, s: Material, text: st
 }
 
 function parseDate(t: string): Date | null {
-  const s = t.trim();
+  const s = t.trim().toLowerCase().replace(/[.!]+$/, "");
   if (/^\d{1,3}$/.test(s)) return new Date(Date.now() + Number(s) * 864e5);
+  if (s === "today") return new Date();
+  if (s === "tomorrow") return new Date(Date.now() + 864e5);
+  const days = s.match(/^(?:in\s+|within\s+|after\s+)?(\d{1,3})\s+days?(?:\s+from\s+(?:now|today))?$/);
+  if (days) return new Date(Date.now() + Number(days[1]) * 864e5);
+  const weeks = s.match(/^(?:in\s+|within\s+|after\s+)?(\d{1,2})\s+weeks?$/);
+  if (weeks) return new Date(Date.now() + Number(weeks[1]) * 7 * 864e5);
   const m = s.match(/^(\d{1,2})[-/.](\d{1,2})(?:[-/.](\d{2,4}))?$/);
   if (!m) return null;
   const now = new Date();
@@ -645,4 +661,39 @@ async function reviewIssue(user: BotUser, id: string, closeIt: boolean): Promise
     if (u?.telegramChatId) await send(u.telegramChatId, `${i.number} was ${closeIt ? "closed" : "reopened"} by ${esc(user.name)}.`).catch(() => {});
   }
   return `${i.number} ${closeIt ? "closed." : "reopened. It is back on the open list."}`;
+}
+
+// ───────────── voice notes ─────────────
+
+/** Turn a voice note into English text for the step in progress. Returns null when it has already replied. */
+async function hear(chatId: string, s: State, v: { file_id: string; duration: number; mime_type?: string }): Promise<string | null> {
+  const wantsText = !!s && ((s.flow === "report" && ["work", "labour", "progress"].includes(s.step)) || (s.flow === "material" && ["item", "qty", "date"].includes(s.step)) || (s.flow === "issue" && s.step === "text"));
+  if (!wantsText) {
+    await send(chatId, "Voice notes work when I ask you to describe something. Start with /report, /snag, /safety or /material, then speak your answer.");
+    return null;
+  }
+  if (!speechConfigured()) {
+    await send(chatId, "Voice notes are not switched on yet. Please type your answer for now.");
+    return null;
+  }
+  if (v.duration > MAX_VOICE_SECONDS) {
+    await send(chatId, `That voice note is ${v.duration} seconds. Please keep it under ${MAX_VOICE_SECONDS} seconds.`);
+    return null;
+  }
+  try {
+    await tg("sendChatAction", { chat_id: chatId, action: "typing" }).catch(() => {});
+    const audio = await downloadFile(v.file_id, "voice.ogg", v.mime_type ?? "audio/ogg");
+    const { text, language } = await speechToEnglish(audio);
+    if (!text) {
+      await send(chatId, "I could not hear anything in that voice note. Please try again, or type it.");
+      return null;
+    }
+    const lang = languageName(language);
+    await send(chatId, `🎙 I heard${lang && lang !== "English" ? ` (${lang})` : ""}: <i>${esc(text)}</i>`);
+    const wantsNumber = s.flow === "report" ? s.step !== "work" : s.flow === "material" ? s.step !== "item" : false;
+    return wantsNumber ? wordsToDigits(text) : text;
+  } catch (e) {
+    await send(chatId, `Sorry, I could not understand that voice note (${esc((e as Error).message)}). Please try again, or type it.`);
+    return null;
+  }
 }

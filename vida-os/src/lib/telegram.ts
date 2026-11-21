@@ -50,13 +50,13 @@ export async function sendClear(chatId: string | number, text: string) {
 /** Safe text for HTML parse mode. */
 export const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-/** Download a Telegram file (a photo) as a File, ready for saveImages(). */
-export async function downloadFile(fileId: string, name: string): Promise<File> {
+/** Download a Telegram file as a File: a photo (ready for saveImages()) or, with `type`, anything else. */
+export async function downloadFile(fileId: string, name: string, forceType?: string): Promise<File> {
   const f = await tg<{ file_path: string }>("getFile", { file_id: fileId });
   const res = await fetch(`https://api.telegram.org/file/bot${process.env.TELEGRAM_BOT_TOKEN}/${f.file_path}`);
-  if (!res.ok) throw new Error("Could not download the photo from Telegram.");
+  if (!res.ok) throw new Error("Could not download the file from Telegram.");
   const ext = f.file_path.split(".").pop()?.toLowerCase();
-  const type = ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg";
+  const type = forceType ?? (ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg");
   return new File([await res.arrayBuffer()], name, { type });
 }
 

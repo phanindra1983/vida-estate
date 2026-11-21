@@ -76,6 +76,11 @@ node prisma/import-data.mjs   # (re)load materials and suppliers from prisma/dat
 - Staff link their account from `/telegram` (one-time code, deep link `t.me/<bot>?start=<code>`). The MD connects the webhook from `/control/telegram`.
 - Each user's in-progress conversation is JSON in `User.telegramState`. Report photos are staged one row each in `TelegramUpload`, so photos sent together don't overwrite each other.
 - Commands `/report`, `/material` and `/approvals` (plus approve and reject buttons) reuse the web rules: the same roles, `canDecide`/`decide`, and `audit`.
+- Also `/in` and `/out` (attendance with location, against `Project.siteLat/siteLng` set by `/site`), `/snag`, `/safety` and `/issues` (`SiteIssue`), and `/summary`. The morning and evening summaries (`src/lib/digest.ts`) run from Vercel cron at `/api/cron/digest?kind=morning|evening`.
+- Voice notes: where the bot asks for text, a voice note (up to 30 s) is turned into English by Sarvam AI (`src/lib/speech.ts`, `SARVAM_API_KEY`, added by the owner).
+- `src/instrumentation.ts` sets the webhook and command menu on each server start; keep its `COMMANDS` in step with the list in `telegram.ts`.
+
+**Customer portal.** `/my/<token>` (public, no login) shows a buyer their payments, schedule, receipts and construction progress. `Booking.portalToken` is made, renewed or turned off from the booking page.
 
 **Uploads.** `saveImages()` in `src/lib/cost.ts` writes to Vercel Blob when `BLOB_READ_WRITE_TOKEN` is set. Otherwise it writes to `public/uploads/`.
 
