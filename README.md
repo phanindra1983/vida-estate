@@ -18,7 +18,7 @@ npm run build && npx next start -p 3100
 
 ## Online
 
-- Website: https://vida-estates.vercel.app (Vercel project `vida-estates`, root `vida-website`)
+- Website: https://www.vidaestates.co.in (also https://vida-estates.vercel.app; DNS at GoDaddy: A @ 216.198.79.1, CNAME www to Vercel) (Vercel project `vida-estates`, root `vida-website`)
 - Vida OS: https://vida-os-eosin.vercel.app (Vercel project `vida-os`, Neon Postgres and Vercel Blob in Singapore, daily procurement run at 08:00 IST)
 
 Secrets (`.env`, Vercel settings) and the old local database (`prisma/dev.db`) are not in this repository.
