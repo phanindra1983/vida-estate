@@ -54,6 +54,8 @@ model Project {
   startingPrice Int?
   launchDate    DateTime?
   published     Boolean         @default(false)
+  siteLat       Float? // site pin for attendance check-ins (set from the bot with /site)
+  siteLng       Float?
   createdAt     DateTime        @default(now())
   towers        Tower[]
   units         Unit[]
@@ -67,6 +69,8 @@ model Project {
   orders        PurchaseOrder[]
   stock         StockMove[]
   documents     Document[]
+  attendance    Attendance[]
+  issues        SiteIssue[]
 }
 
 model Tower {
@@ -638,4 +642,46 @@ model TelegramUpload {
   userId    String
   path      String
   takenAt   DateTime @default(now())
+}
+
+// Site check-in and check-out from the Telegram bot, with the phone's location.
+model Attendance {
+  id        String    @id @default(cuid())
+  userId    String
+  projectId String
+  day       String // YYYY-MM-DD in IST
+  inAt      DateTime  @default(now())
+  inLat     Float
+  inLng     Float
+  inMeters  Int? // distance from the project's site pin, if it has one
+  outAt     DateTime?
+  outLat    Float?
+  outLng    Float?
+  outMeters Int?
+  project   Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, day])
+  @@index([projectId, day])
+}
+
+// Snags (quality defects) and safety issues raised on site.
+model SiteIssue {
+  id          String    @id @default(cuid())
+  number      String    @unique
+  projectId   String
+  kind        String // SNAG | SAFETY
+  description String
+  severity    String // LOW | MEDIUM | HIGH
+  photos      String    @default("[]") // JSON array of { path, takenAt }
+  status      String    @default("OPEN") // OPEN | FIXED | CLOSED
+  raisedById  String
+  fixedById   String?
+  fixedAt     DateTime?
+  fixPhotos   String? // JSON array of { path, takenAt }
+  closedById  String?
+  closedAt    DateTime?
+  createdAt   DateTime  @default(now())
+  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId, status])
 }

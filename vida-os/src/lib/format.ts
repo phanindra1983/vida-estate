@@ -52,3 +52,16 @@ export function titleCase(s: string) {
 export function docNo(prefix: string, project: string | null, n: number) {
   return [prefix, project, String(n).padStart(4, "0")].filter(Boolean).join("-");
 }
+
+const TIME = new Intl.DateTimeFormat("en-IN", { hour: "numeric", minute: "2-digit", timeZone: "Asia/Kolkata" });
+export const time = (d: Date | string | null | undefined) => (d ? TIME.format(new Date(d)) : "–");
+
+const IST_MS = 330 * 60_000;
+/** The IST calendar day as YYYY-MM-DD; offsetDays moves it (-1 = yesterday). */
+export function istDay(offsetDays = 0, at = Date.now()) {
+  return new Date(at + IST_MS + offsetDays * 864e5).toISOString().slice(0, 10);
+}
+/** Midnight IST at the start of that day, as a Date. */
+export function istDayStart(offsetDays = 0, at = Date.now()) {
+  return new Date(Date.parse(istDay(offsetDays, at) + "T00:00:00Z") - IST_MS);
+}

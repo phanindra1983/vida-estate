@@ -23,6 +23,8 @@ export const NAV: NavGroup[] = [
   { label: "Projects", items: [
     { href: "/projects/schedule", label: "Schedule", roles: PROJECT_ROLES },
     { href: "/projects/reports", label: "Daily reports", roles: PROJECT_ROLES },
+    { href: "/projects/attendance", label: "Site attendance", roles: [...PROJECT_ROLES, "STOREKEEPER"] },
+    { href: "/projects/issues", label: "Snags & safety", roles: [...PROJECT_ROLES, "STOREKEEPER"] },
   ] },
   { label: "Cost", items: [
     { href: "/cost/budgets", label: "Budgets", roles: COST_ROLES },

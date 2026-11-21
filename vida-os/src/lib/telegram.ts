@@ -34,6 +34,19 @@ export async function send(chatId: string | number, text: string, buttons?: Butt
   });
 }
 
+/** Ask for the phone's current location with a one-tap button under the keyboard. */
+export async function askLocation(chatId: string | number, text: string) {
+  return tg("sendMessage", {
+    chat_id: chatId, text, parse_mode: "HTML",
+    reply_markup: { keyboard: [[{ text: "📍 Share my location", request_location: true }], [{ text: "/cancel" }]], resize_keyboard: true, one_time_keyboard: true },
+  });
+}
+
+/** Send a message and take away the location button. */
+export async function sendClear(chatId: string | number, text: string) {
+  return tg("sendMessage", { chat_id: chatId, text, parse_mode: "HTML", disable_web_page_preview: true, reply_markup: { remove_keyboard: true } });
+}
+
 /** Safe text for HTML parse mode. */
 export const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
@@ -83,8 +96,15 @@ export async function notifyRoles(roles: string[], text: string, opts: { project
 
 export const COMMANDS = [
   { command: "report", description: "Today's site report with photos" },
+  { command: "in", description: "Check in at site" },
+  { command: "out", description: "Check out from site" },
+  { command: "snag", description: "Report a quality defect" },
+  { command: "safety", description: "Report a safety issue" },
+  { command: "issues", description: "Open snags and safety issues" },
   { command: "material", description: "Ask for material" },
   { command: "approvals", description: "What is waiting for you" },
+  { command: "summary", description: "Today's picture across your projects" },
+  { command: "site", description: "Set the project's site location" },
   { command: "cancel", description: "Stop what you are doing" },
   { command: "help", description: "What the bot can do" },
 ];

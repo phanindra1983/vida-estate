@@ -5,8 +5,15 @@
  */
 const COMMANDS = [
   { command: "report", description: "Today's site report with photos" },
+  { command: "in", description: "Check in at site" },
+  { command: "out", description: "Check out from site" },
+  { command: "snag", description: "Report a quality defect" },
+  { command: "safety", description: "Report a safety issue" },
+  { command: "issues", description: "Open snags and safety issues" },
   { command: "material", description: "Ask for material" },
   { command: "approvals", description: "What is waiting for you" },
+  { command: "summary", description: "Today's picture across your projects" },
+  { command: "site", description: "Set the project's site location" },
   { command: "cancel", description: "Stop what you are doing" },
   { command: "help", description: "What the bot can do" },
 ];
@@ -23,13 +30,12 @@ export async function register() {
   };
   try {
     const url = `${base}/api/telegram`;
-    const me = (await call("getMe")) as { username?: string } | undefined;
-    console.log(`Telegram bot username: @${me?.username}`);
     const info = await call("getWebhookInfo");
-    if (info?.url === url) return;
-    await call("setWebhook", { url, secret_token: secret, allowed_updates: ["message", "callback_query"], drop_pending_updates: true });
-    await call("setMyCommands", { commands: COMMANDS });
-    console.log("Telegram bot connected.");
+    if (info?.url !== url) {
+      await call("setWebhook", { url, secret_token: secret, allowed_updates: ["message", "callback_query"], drop_pending_updates: true });
+      console.log("Telegram bot connected.");
+    }
+    await call("setMyCommands", { commands: COMMANDS }); // keeps the menu in step with the code
   } catch (e) {
     console.error("Telegram auto-connect failed:", (e as Error).message);
   }

@@ -8,6 +8,14 @@
     {
       "path": "/api/cron/procurement",
       "schedule": "30 2 * * *"
+    },
+    {
+      "path": "/api/cron/digest?kind=morning",
+      "schedule": "30 2 * * *"
+    },
+    {
+      "path": "/api/cron/digest?kind=evening",
+      "schedule": "30 13 * * *"
     }
   ]
 }
