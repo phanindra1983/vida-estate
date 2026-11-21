@@ -687,3 +687,33 @@ model SiteIssue {
 
   @@index([projectId, status])
 }
+
+/// Employers and employer clusters near a project, pushed monthly from the micromarket
+/// dashboard (/api/accounts/in). Sales qualifies each one for a corporate / bulk-sales tie-up.
+model CorporateAccount {
+  id              String    @id @default(cuid())
+  key             String    @unique // "<area>|<name>", stable across monthly pushes
+  area            String // e.g. "Hyderabad – Kukatpally / Moosapet / Balanagar (GOCL)"
+  areaKey         String // e.g. "hyderabad"
+  kind            String    @default("CLUSTER") // CLUSTER | EMPLOYER
+  name            String
+  cluster         String?
+  sector          String?
+  kmFromSite      Float?
+  fitScore        Int?
+  employersMapped Int?
+  reviewVolume    Int?
+  jobPosts        Int?
+  medianCtcLakh   Float?
+  topEmployers    String?
+  evidence        String? // headcount notes and sources
+  status          String    @default("NEW") // NEW | CONTACTED | YES | NO
+  statusNote      String?
+  ownerId         String?
+  nextFollowUp    DateTime?
+  firstSeenAt     DateTime  @default(now())
+  lastSeenAt      DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([areaKey, status])
+}

@@ -450,3 +450,17 @@ export async function markPayoutPaid(f: FormData) {
   revalidatePath("/sales/payouts");
   done(path, "Marked as paid");
 }
+
+/** Corporate accounts: sales marks an employer as qualified, not a fit, or contacted. */
+export async function setAccountStatus(f: FormData) {
+  const u = await requireUser(SALES_ROLES);
+  const path = back(f, "/sales/accounts");
+  const id = s(f, "id"), status = s(f, "status");
+  if (!["NEW", "CONTACTED", "YES", "NO"].includes(status)) fail(path, "Pick Yes, No or Contacted");
+  const acc = await db.corporateAccount.findUnique({ where: { id } });
+  if (!acc) fail(path, "That account no longer exists");
+  await db.corporateAccount.update({ where: { id }, data: { status, statusNote: s(f, "note").slice(0, 300) || null, ownerId: acc.ownerId ?? u.id } });
+  await audit(u, "corporate_account.status", "CorporateAccount", id, `${acc.name}: ${acc.status} → ${status}`, { before: { status: acc.status }, after: { status } });
+  revalidatePath("/sales/accounts");
+  done(path, `${acc.name}: ${status === "YES" ? "qualified" : status === "NO" ? "marked not a fit" : "marked contacted"}`);
+}
