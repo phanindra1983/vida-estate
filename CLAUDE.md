@@ -59,6 +59,7 @@ node prisma/import-data.mjs   # (re)load materials and suppliers from prisma/dat
 - With 2 or more quotes it sends the recommended vendor for approval automatically. On approval it raises the PO and emails the vendors.
 - It runs through `runEngineIfStale()` (at most every 10 minutes, when the procurement pages load) and through the Vercel cron. The cron (`vida-os/vercel.json`) calls `/api/cron/procurement` once a day, with `Authorization: Bearer CRON_SECRET` or `?key=CRON_KEY`.
 - `Rfq.live` marks an enquiry that goes to real suppliers.
+- Supplier replies (`src/lib/mail-inbox.ts`): the purchase Gmail (`SMTP_USER` + `SMTP_PASS`, over IMAP, read-only) is checked when procurement pages open (at most every 5 minutes), by the daily procurement cron and by "Check mail now". Mail whose subject carries an RFQ number, or from a vendor invited in the last 90 days, is filed as `RfqMessage` (attachments to Blob) and alerts purchase on Telegram. The RFQ page shows it with the outgoing `OutboxMessage` emails as one "Email trail".
 
 **Messaging** (`src/lib/notify.ts`).
 - Email uses SMTP (Gmail), or Resend if configured. With no sender configured, emails are only queued in `OutboxMessage`, which shows as "Messages sent".

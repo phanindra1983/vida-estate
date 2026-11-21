@@ -1,3 +1,4 @@
+import { checkInboxIfStale } from "@/lib/mail-inbox";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { requireUser, projectScope } from "@/lib/auth";
@@ -11,10 +12,10 @@ export const dynamic = "force-dynamic";
 export default async function Enquiries({ searchParams }: { searchParams: Promise<{ ok?: string; status?: string }> }) {
   const u = await requireUser(PROCUREMENT_ROLES);
   const sp = await searchParams;
-  await runEngineIfStale();
+  await Promise.all([runEngineIfStale(), checkInboxIfStale()]);
   const rfqs = await db.rfq.findMany({
     where: { ...projectScope(u), ...(sp.status ? { status: sp.status } : {}) },
-    include: { material: true, quotes: true, _count: { select: { invites: true } } },
+    include: { material: true, quotes: true, _count: { select: { invites: true, messages: true } } },
     orderBy: { createdAt: "desc" },
     take: 200,
   });
@@ -42,7 +43,7 @@ export default async function Enquiries({ searchParams }: { searchParams: Promis
                 <td>{r.material.name}</td>
                 <td>{projects.get(r.projectId)}</td>
                 <td className="num">{num(r.qty)} {r.unit}</td>
-                <td>{r.quotes.length} of {r._count.invites}</td>
+                <td>{r.quotes.length} of {r._count.invites}{r._count.messages > 0 && <p className="text-xs text-stone">📩 {r._count.messages} email{r._count.messages > 1 ? "s" : ""}</p>}</td>
                 <td className="whitespace-nowrap">{date(r.quoteDueAt)}</td>
                 <td className="whitespace-nowrap">{date(r.orderBy)}{r.status !== "AWARDED" && r.status !== "CANCELLED" && r.orderBy.getTime() < Date.now() && <p><Badge tone="bad">Late</Badge></p>}</td>
                 <td>{rec ? <>{vendors.get(rec.vendorId)}<p className="text-xs text-stone">{inr(Math.round((r.qty * rec.rate + rec.freight) * (1 + rec.gstPct / 100)))}</p></> : "–"}</td>

@@ -8,7 +8,8 @@ import { publicUrl, waLink } from "@/lib/notify";
 import { date, datetime, inr, num } from "@/lib/format";
 import { PageHeader, Card, Table, Badge, Status, Button, Notice, LinkButton } from "@/components/ui";
 import { PrintButton } from "@/components/PrintButton";
-import { chooseVendor, sendReminders, closeQuotes, cancelRfq, simulateQuotes } from "../../actions";
+import { chooseVendor, sendReminders, closeQuotes, cancelRfq, simulateQuotes, checkMailNow } from "../../actions";
+import { checkInboxIfStale, inboxConfigured, lastInboxCheck, type Attachment } from "@/lib/mail-inbox";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,7 @@ export default async function RfqPage({ params, searchParams }: { params: Promis
   const u = await requireUser(PROCUREMENT_ROLES);
   const { id } = await params;
   const sp = await searchParams;
-  await runEngineIfStale();
+  await Promise.all([runEngineIfStale(), checkInboxIfStale()]);
   const r = await db.rfq.findUnique({ where: { id }, include: { invites: true, material: true } });
   if (!r || !canSeeProject(u, r.projectId)) notFound();
   const [project, milestone, cmp, approval] = await Promise.all([
@@ -26,6 +27,16 @@ export default async function RfqPage({ params, searchParams }: { params: Promis
     db.approvalRequest.findFirst({ where: { entityType: "Rfq", entityId: r.id }, orderBy: { createdAt: "desc" }, include: { steps: true } }),
   ]);
   const vendors = new Map((await db.vendor.findMany({ where: { id: { in: r.invites.map((i) => i.vendorId) } } })).map((v) => [v.id, v]));
+  const [inbound, outbound, inbox] = await Promise.all([
+    db.rfqMessage.findMany({ where: { rfqId: r.id } }),
+    db.outboxMessage.findMany({ where: { channel: "EMAIL", OR: [{ refType: "RfqInvite", refId: { in: r.invites.map((i) => i.id) } }, { refType: "Rfq", refId: r.id }] } }),
+    lastInboxCheck(),
+  ]);
+  const inviteVendor = new Map(r.invites.map((i) => [i.id, i.vendorId]));
+  const trail = [
+    ...outbound.map((m) => ({ key: m.id, dir: "OUT" as const, at: m.createdAt, who: vendors.get(inviteVendor.get(m.refId ?? "") ?? "")?.name ?? m.to, subject: m.subject ?? "", body: m.body, files: [] as Attachment[], note: m.status === "SENT" ? (m.error ?? "Sent") : `${m.status === "QUEUED" ? "Not sent" : "Failed"}: ${m.error ?? ""}` })),
+    ...inbound.map((m) => ({ key: m.id, dir: "IN" as const, at: m.receivedAt, who: (m.vendorId && vendors.get(m.vendorId)?.name) || m.fromAddr, subject: m.subject, body: m.body, files: JSON.parse(m.attachments) as Attachment[], note: m.matchedBy === "SENDER" ? "Filed here by sender (no enquiry number in the subject)" : "" })),
+  ].sort((a, b) => a.at.getTime() - b.at.getTime());
   const po = r.poId ? await db.purchaseOrder.findUnique({ where: { id: r.poId } }) : null;
   const canAct = ["MD", "GM_PROJECTS", "PROJECT_MANAGER", "PURCHASE"].includes(u.role);
   const rows = cmp.rows;
@@ -156,6 +167,42 @@ export default async function RfqPage({ params, searchParams }: { params: Promis
           </ul>
         </Card>
       </div>
+
+      <Card title={`Email trail (${trail.length})`} className="no-print mt-6" pad={false}
+        action={<form action={checkMailNow}><input type="hidden" name="rfqId" value={r.id} /><Button size="sm" variant="secondary">Check mail now</Button></form>}>
+        <p className="border-b border-line px-5 py-3 text-xs text-stone">
+          {inboxConfigured()
+            ? <>Supplier replies are read from the purchase mailbox and filed here.{inbox ? ` Last checked ${datetime(new Date(inbox.checkedAt))}.` : ""}{inbox?.error ? ` Last check failed: ${inbox.error}` : ""}</>
+            : <>Supplier replies will appear here once the purchase mailbox is connected (the Gmail app password, SMTP_PASS).</>}
+        </p>
+        {trail.length === 0 ? <p className="p-5 text-sm text-stone">No emails on this enquiry yet.</p> : (
+          <ul className="divide-y divide-line">
+            {trail.map((m) => {
+              const fresh = m.dir === "IN" && Date.now() - m.at.getTime() < 864e5;
+              return (
+                <li key={m.key} className={`p-5 text-sm ${m.dir === "IN" ? "bg-[#fbf6ec]" : ""}`}>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge tone={m.dir === "IN" ? "brass" : undefined}>{m.dir === "IN" ? "📩 Reply from supplier" : "Sent by Vida"}</Badge>
+                    {fresh && <Badge tone="good">New</Badge>}
+                    <span className="font-medium">{m.who}</span>
+                    <span className="ml-auto text-xs text-stone">{datetime(m.at)}</span>
+                  </div>
+                  <p className="mt-1 text-xs text-stone">{m.subject}{m.dir === "OUT" && m.note ? ` · ${m.note}` : ""}{m.dir === "IN" && m.note ? ` · ${m.note}` : ""}</p>
+                  <details className="mt-2" open={m.dir === "IN"}>
+                    <summary className="cursor-pointer text-xs text-stone">{m.dir === "IN" ? "Message" : "Show the email"}</summary>
+                    <pre className="mt-2 whitespace-pre-wrap font-sans text-sm">{m.body}</pre>
+                  </details>
+                  {m.files.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-3 text-xs">
+                      {m.files.map((f) => <a key={f.url} href={f.url} target="_blank" rel="noreferrer" className="underline">📎 {f.name} ({Math.max(1, Math.round(f.size / 1024))} KB)</a>)}
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </Card>
     </>
   );
 }

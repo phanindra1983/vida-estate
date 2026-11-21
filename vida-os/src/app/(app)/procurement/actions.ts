@@ -7,6 +7,7 @@ import { PROCUREMENT_ROLES } from "@/lib/constants";
 import { runEngine, submitAward, remind, evaluateRfq, createRfq, comparison, createAdhocRfq } from "@/lib/procurement";
 import { str, numVal, fail, done } from "@/lib/cost";
 import { sendEmail, emailTestTo } from "@/lib/notify";
+import { checkInbox, inboxConfigured } from "@/lib/mail-inbox";
 
 const BUYERS = ["MD", "GM_PROJECTS", "PROJECT_MANAGER", "PURCHASE"];
 const SETUP = ["MD", "GM_PROJECTS", "PROJECT_MANAGER", "PURCHASE"];
@@ -41,6 +42,17 @@ export async function chooseVendor(fd: FormData) {
   }
   revalidatePath("/", "layout");
   done(back, "Sent for approval. The purchase order is raised automatically once it is approved.");
+}
+
+export async function checkMailNow(fd: FormData) {
+  await requireUser(PROCUREMENT_ROLES);
+  const id = str(fd, "rfqId");
+  const back = id ? `/procurement/rfq/${id}` : "/procurement/enquiries";
+  if (!inboxConfigured()) fail(back, "The purchase mailbox is not connected yet (the Gmail app password, SMTP_PASS, is missing).");
+  const r = await checkInbox();
+  revalidatePath("/procurement", "layout");
+  if (r.error) fail(back, `Could not read the mailbox: ${r.error}`);
+  done(back, r.filed ? `${r.filed} new supplier email(s) filed on their enquiries.` : "Mailbox checked. No new supplier emails.");
 }
 
 export async function sendReminders(fd: FormData) {

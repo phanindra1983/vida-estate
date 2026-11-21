@@ -584,6 +584,7 @@ model Rfq {
   material      Material            @relation(fields: [materialId], references: [id])
   requirement   MaterialRequirement? @relation(fields: [requirementId], references: [id])
   invites       RfqInvite[]
+  messages      RfqMessage[]
   quotes        RfqQuote[]
 }
 
@@ -716,4 +717,23 @@ model CorporateAccount {
   updatedAt       DateTime  @updatedAt
 
   @@index([areaKey, status])
+}
+
+/// Supplier emails that arrived in the purchase mailbox, filed on their enquiry's trail.
+/// Outgoing enquiry emails stay in OutboxMessage; the RFQ page shows both on one timeline.
+model RfqMessage {
+  id          String   @id @default(cuid())
+  rfqId       String
+  vendorId    String?
+  messageId   String   @unique // the email's Message-ID, so a mail is filed once
+  fromAddr    String
+  subject     String
+  body        String // the new part of the reply, quoted history removed
+  attachments String   @default("[]") // JSON [{ name, url, size }]
+  matchedBy   String // RFQ_NUMBER | SENDER
+  receivedAt  DateTime
+  createdAt   DateTime @default(now())
+  rfq         Rfq      @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+
+  @@index([rfqId, receivedAt])
 }
