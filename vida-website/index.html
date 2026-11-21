@@ -6,11 +6,10 @@
 <title>Vida Estates · Premium homes in Hyderabad</title>
 <meta name="description" content="Vida Estates builds premium homes in Kokapet and Kukatpally, Hyderabad, and hands them over on the date in your agreement. Book a site visit.">
 <meta name="theme-color" content="#1A1F24">
-<!-- DEPLOY STEP: replace og:url and og:image with absolute live URLs -->
 <meta property="og:title" content="Vida Estates · Arrive on time">
 <meta property="og:description" content="Premium homes in Hyderabad, handed over on the date in your agreement.">
-<meta property="og:url" content="https://example.com/">
-<meta property="og:image" content="https://example.com/assets/hero-ending.jpg">
+<meta property="og:url" content="https://www.vidaestates.co.in/">
+<meta property="og:image" content="https://www.vidaestates.co.in/assets/hero-ending.jpg">
 <meta property="og:type" content="website">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 150'%3E%3Cpath d='M22,40 L60,128 L98,40' fill='none' stroke='%231A1F24' stroke-width='9'/%3E%3Ccircle cx='60' cy='18' r='11' fill='%23B98A4E'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -349,24 +348,24 @@ body.paused *,body.paused *::before,body.paused *::after{animation-play-state:pa
         <a class="btn ghost" href="#visit" style="color:var(--ink)">Book a site visit</a>
       </div>
       <div class="grid2 reveal">
-        <a class="card" href="#visit" aria-label="Vida Aurum, Kokapet. Book a site visit">
+        <a class="card" href="#visit" data-project="VA" aria-label="Vida Aurum, Kokapet. Book a site visit">
           <div class="img" style="background-image:url('assets/tower-dusk.jpg')"></div>
           <span class="caption">Artist's impression</span>
           <div class="body">
-            <span class="tag">Kokapet · Launching soon</span>
+            <span class="tag" data-live="tag">Kokapet · Launching soon</span>
             <h3>Vida Aurum</h3>
-            <div class="meta"><span>2, 3 and 4 BHK</span><span>From ₹1.5 Cr</span></div>
-            <p class="rera">TS RERA No. shown on approval</p>
+            <div class="meta"><span>2, 3 and 4 BHK</span><span data-live="price">From ₹1.5 Cr</span></div>
+            <p class="rera" data-live="rera">TS RERA No. shown on approval</p>
           </div>
         </a>
-        <a class="card" href="#luxora" aria-label="Vida Luxora, GOCL, Kukatpally. See the project">
+        <a class="card" href="#luxora" data-project="VL" aria-label="Vida Luxora, GOCL, Kukatpally. See the project">
           <div class="img" style="background-image:url('assets/luxora-aerial.jpg')"></div>
           <span class="caption">Artist's impression</span>
           <div class="body">
-            <span class="tag">GOCL, Kukatpally · Approvals in progress</span>
+            <span class="tag" data-live="tag">GOCL, Kukatpally · Approvals in progress</span>
             <h3>Vida Luxora</h3>
             <div class="meta"><span>3 BHK only</span><span>2,040 to 2,550 sq ft</span><span>3 towers, 28 floors</span></div>
-            <p class="rera">TS RERA registration in progress</p>
+            <p class="rera" data-live="rera">TS RERA registration in progress</p>
           </div>
         </a>
       </div>
@@ -661,6 +660,22 @@ body.paused *,body.paused *::before,body.paused *::after{animation-play-state:pa
   // The Vida OS address comes from config.js (one line to change per environment).
   const VIDA_OS_URL = (window.VIDA_OS_URL || 'http://localhost:3100').replace(/\/$/, '');
   document.querySelectorAll('[data-os]').forEach(a => { a.href = VIDA_OS_URL + a.dataset.os; });
+
+  // ── project cards: status, price and RERA number come live from Vida OS ──
+  const STATUS = { UNDER_CONSTRUCTION: 'Under construction', PLANNING: 'Approvals in progress', LAUNCHED: 'Now selling', READY: 'Ready to move in', COMPLETED: 'Ready to move in' };
+  const crore = n => '₹' + (n / 1e7).toFixed(2).replace(/\.?0+$/, '') + ' Cr';
+  fetch(VIDA_OS_URL + '/api/public/projects').then(r => r.ok ? r.json() : null).then(d => {
+    (d?.projects || []).forEach(p => {
+      const card = document.querySelector(`.card[data-project="${p.code}"]`); if (!card) return;
+      const set = (k, v) => { const el = card.querySelector(`[data-live="${k}"]`); if (el && v) el.textContent = v; };
+      const place = (p.location || '').split(',').slice(0, -1).join(',').trim() || p.location;
+      const left = p.status !== 'PLANNING' && p.unitsLeft > 0 && p.unitsLeft <= 40 ? ` · Only ${p.unitsLeft} homes left` : '';
+      set('tag', `${place} · ${STATUS[p.status] || 'Now launching'}${left}`);
+      if (p.startingPrice) set('price', 'From ' + crore(p.startingPrice));
+      // Only a real TS RERA number (P + 11 digits) is shown; anything else keeps the "in progress" line.
+      if (/^P\d{11}$/.test(p.reraNo || '')) set('rera', 'TS RERA No. ' + p.reraNo);
+    });
+  }).catch(() => {});
 
   // ── visit form: sends the enquiry straight into Vida OS leads ──
   const form = $('#visitForm'), btn = $('button[type=submit]', form);
