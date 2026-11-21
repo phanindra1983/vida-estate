@@ -5,8 +5,11 @@ import { projectSnapshot, needsEscalation } from "@/lib/mis";
 import { ROLE_LABEL, SALES_ROLES } from "@/lib/constants";
 import { inr, pct, date } from "@/lib/format";
 import { PageHeader, Card, Stat, Table, Progress, Badge, LinkButton, Status } from "@/components/ui";
+import { OwnerSections } from "./_components/OwnerSections";
 
 const MIS_ROLES = ["MD", "FINANCE_HEAD", "SALES_HEAD", "GM_PROJECTS"];
+
+export const dynamic = "force-dynamic";
 
 export default async function Dashboard() {
   const user = await requireUser();
@@ -58,6 +61,8 @@ export default async function Dashboard() {
             <Stat label="Collected" value={inr(tot.collected)} sub={`${pct(tot.collected, tot.demanded)}% of ${inr(tot.demanded)} demanded`} tone={pct(tot.collected, tot.demanded) < 80 ? "warn" : "good"} />
             <Stat label="Overdue from buyers" value={inr(tot.overdue)} sub="Past due date, unpaid" tone={tot.overdue ? "bad" : "good"} />
           </div>
+
+          <OwnerSections projectIds={user.projectIds} />
 
           <Card title="Projects at a glance" pad={false} className="mb-8">
             <Table head={["Project", "Units sold", { label: "Sales value", num: true }, "Collections", "Budget used (committed)", { label: "Actual spend", num: true }, "Schedule"]}>
