@@ -395,6 +395,24 @@ export async function setBookingStatus(f: FormData) {
   done(path, "Booking updated");
 }
 
+// ───────── Customer portal ─────────
+
+/** Create (or replace) the buyer's private portal link, or turn it off. */
+export async function setPortalLink(f: FormData) {
+  const u = await requireUser(COLLECTION_ROLES);
+  const id = s(f, "bookingId");
+  const path = back(f, `/sales/bookings/${id}`);
+  const turnOff = s(f, "mode") === "off";
+  const b = await db.booking.findUnique({ where: { id }, include: { unit: true } });
+  if (!b || !canSeeProject(u, b.unit.projectId)) fail(path, "Booking not found");
+  const { randomBytes } = await import("node:crypto");
+  const portalToken = turnOff ? null : randomBytes(24).toString("base64url");
+  await db.booking.update({ where: { id }, data: { portalToken, ...(turnOff ? {} : { portalOpenedAt: null }) } });
+  await audit(u, "UPDATE", "Booking", id, turnOff ? `Turned off the portal link for ${b.buyerName}` : b.portalToken ? `Made a new portal link for ${b.buyerName} (the old one stops working)` : `Made a portal link for ${b.buyerName}`);
+  revalidatePath(path);
+  done(path, turnOff ? "Portal link turned off." : "Portal link ready. Send it to the buyer on WhatsApp.");
+}
+
 // ───────── Payouts ─────────
 
 export async function sendPayoutForApproval(f: FormData) {

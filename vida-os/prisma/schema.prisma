@@ -304,6 +304,8 @@ model Booking {
   buyerEmail     String?
   agreementValue Int
   tokenAmount    Int
+  portalToken    String?     @unique // the buyer's private link to their portal (/my/<token>); null = no link
+  portalOpenedAt DateTime? // last time the buyer opened it
   paymentRef     String
   bookedAt       DateTime    @default(now())
   bookedById     String

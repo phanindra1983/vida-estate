@@ -6,7 +6,8 @@ import { COLLECTION_ROLES } from "@/lib/constants";
 import { inr, date, datetime, pct } from "@/lib/format";
 import { isOverdue } from "@/lib/collections";
 import { PageHeader, Card, Table, Status, Badge, Button, Field, LinkButton, Stat } from "@/components/ui";
-import { recordReceipt, setBookingStatus } from "../../actions";
+import { recordReceipt, setBookingStatus, setPortalLink } from "../../actions";
+import { waLink, publicUrl } from "@/lib/notify";
 import { Flash, one, type SP } from "../../_ui";
 
 export const dynamic = "force-dynamic";
@@ -133,6 +134,37 @@ export default async function BookingPage({ params, searchParams }: { params: Pr
               )}
             </div>}
           </Card>
+
+          {canManage && (
+            <Card title="Customer portal">
+              {b.portalToken ? (() => {
+                const link = publicUrl(`/my/${b.portalToken}`);
+                const msg = `Dear ${b.buyerName.split(" ")[0]}, here is your private Vida Estates page for ${b.unit.number}, ${b.unit.project.name}. See your payment schedule, receipts and construction progress with photos: ${link}`;
+                return (
+                  <div className="grid gap-3 text-sm">
+                    <p className="text-stone">The buyer sees their payments, receipts and construction progress with site photos. No password needed; the link is the key.</p>
+                    <input className="input text-xs" readOnly value={link} aria-label="Portal link" />
+                    <div className="flex flex-wrap gap-2">
+                      <a href={waLink(b.buyerPhone, msg)} target="_blank" rel="noreferrer" className="rounded-lg bg-ink px-3 py-1.5 text-sm text-white">Send on WhatsApp</a>
+                      <a href={link} target="_blank" rel="noreferrer" className="rounded-lg border border-line px-3 py-1.5 text-sm">Open as buyer</a>
+                    </div>
+                    <p className="text-xs text-stone">{b.portalOpenedAt ? `Buyer last opened it ${datetime(b.portalOpenedAt)}` : "Not opened yet"}</p>
+                    <div className="flex flex-wrap gap-2">
+                      <form action={setPortalLink}><input type="hidden" name="bookingId" value={b.id} /><input type="hidden" name="back" value={path} /><Button size="sm" variant="secondary">New link</Button></form>
+                      <form action={setPortalLink}><input type="hidden" name="bookingId" value={b.id} /><input type="hidden" name="back" value={path} /><input type="hidden" name="mode" value="off" /><Button size="sm" variant="danger">Turn off</Button></form>
+                    </div>
+                  </div>
+                );
+              })() : (
+                <form action={setPortalLink} className="grid gap-3 text-sm">
+                  <input type="hidden" name="bookingId" value={b.id} />
+                  <input type="hidden" name="back" value={path} />
+                  <p className="text-stone">Give the buyer a private page with their payment schedule, receipts and construction progress with site photos.</p>
+                  <div><Button size="sm">Create portal link</Button></div>
+                </form>
+              )}
+            </Card>
+          )}
 
           {b.payouts.length > 0 && (
             <Card title="Payouts on this booking">
