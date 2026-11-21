@@ -10,6 +10,7 @@ export const NAV: NavGroup[] = [
   { label: "Overview", items: [
     { href: "/", label: "Dashboard", roles: ALL },
     { href: "/approvals", label: "Approvals", roles: ALL },
+    { href: "/telegram", label: "My Telegram", roles: ALL },
   ] },
   { label: "Sales", items: [
     { href: "/sales/leads", label: "Leads", roles: SALES_ROLES },
@@ -45,6 +46,7 @@ export const NAV: NavGroup[] = [
     { href: "/control/audit", label: "Audit trail", roles: ["MD", "FINANCE_HEAD"] },
     { href: "/control/authority", label: "Approval limits", roles: ADMIN_ROLES },
     { href: "/control/users", label: "Users & access", roles: ADMIN_ROLES },
+    { href: "/control/telegram", label: "Telegram bot", roles: ADMIN_ROLES },
     { href: "/control/masters", label: "Masters", roles: ["MD", "FINANCE_HEAD", "GM_PROJECTS", "PURCHASE", "SALES_HEAD", "HR"] },
   ] },
 ];

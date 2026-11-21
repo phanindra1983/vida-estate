@@ -25,6 +25,8 @@ model User {
   phone          String?
   active         Boolean         @default(true)
   lastAssignedAt DateTime? // round-robin lead assignment
+  telegramChatId String?         @unique // linked Telegram chat (site bot)
+  telegramState  String? // JSON: the bot conversation in progress
   createdAt      DateTime        @default(now())
   access         ProjectAccess[]
   employee       Employee?
@@ -620,4 +622,20 @@ model OutboxMessage {
   refType   String?
   refId     String?
   createdAt DateTime @default(now())
+}
+
+// One-time codes that link a staff login to their Telegram account.
+model TelegramLinkCode {
+  code      String   @id
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+// Photos a site engineer has sent the bot for the daily report in progress.
+model TelegramUpload {
+  id        String   @id @default(cuid())
+  userId    String
+  path      String
+  takenAt   DateTime @default(now())
 }

@@ -71,6 +71,12 @@ node prisma/import-data.mjs   # (re)load materials and suppliers from prisma/dat
 - `POST /api/leads/web` takes enquiries (CORS `*`, consent required).
 - Both lead routes (`/api/leads/web` and `/api/leads/meta`) go through `intakeLead()` in `src/lib/sales.ts`, which checks for duplicates, assigns leads round-robin and handles 15-minute escalation.
 
+**Telegram site bot** (`src/lib/telegram.ts`, `src/lib/telegram-bot.ts`, webhook `src/app/api/telegram/route.ts`).
+- Telegram posts updates to `/api/telegram`, which checks the `x-telegram-bot-api-secret-token` header against `TELEGRAM_WEBHOOK_SECRET`. The bot token is `TELEGRAM_BOT_TOKEN`, added by the owner.
+- Staff link their account from `/telegram` (one-time code, deep link `t.me/<bot>?start=<code>`). The MD connects the webhook from `/control/telegram`.
+- Each user's in-progress conversation is JSON in `User.telegramState`. Report photos are staged one row each in `TelegramUpload`, so photos sent together don't overwrite each other.
+- Commands `/report`, `/material` and `/approvals` (plus approve and reject buttons) reuse the web rules: the same roles, `canDecide`/`decide`, and `audit`.
+
 **Uploads.** `saveImages()` in `src/lib/cost.ts` writes to Vercel Blob when `BLOB_READ_WRITE_TOKEN` is set. Otherwise it writes to `public/uploads/`.
 
 **Data conventions.**
