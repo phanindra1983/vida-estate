@@ -1,4 +1,5 @@
 import { intakeLead } from "@/lib/sales";
+import { announceLead, noteArrival } from "@/lib/lead-intake";
 import { CORS, json, projectIdFrom } from "../_shared";
 
 /** Website enquiry form. Consent (DPDP Act) is required. */
@@ -24,6 +25,8 @@ export async function POST(req: Request) {
       },
       null,
     );
+    await noteArrival("WEBSITE");
+    if (!res.duplicate) await announceLead(res.lead.id);
     return json({ ok: true, duplicate: res.duplicate });
   } catch (e) {
     return json({ error: (e as Error).message }, 400);

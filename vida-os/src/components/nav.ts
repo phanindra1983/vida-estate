@@ -49,6 +49,7 @@ export const NAV: NavGroup[] = [
     { href: "/control/authority", label: "Approval limits", roles: ADMIN_ROLES },
     { href: "/control/users", label: "Users & access", roles: ADMIN_ROLES },
     { href: "/control/telegram", label: "Telegram bot", roles: ADMIN_ROLES },
+    { href: "/control/leads", label: "Lead sources", roles: ["MD", "SALES_HEAD", "MARKETING"] },
     { href: "/control/masters", label: "Masters", roles: ["MD", "FINANCE_HEAD", "GM_PROJECTS", "PURCHASE", "SALES_HEAD", "HR"] },
   ] },
 ];

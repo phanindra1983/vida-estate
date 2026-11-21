@@ -69,7 +69,8 @@ node prisma/import-data.mjs   # (re)load materials and suppliers from prisma/dat
 **Website integration.**
 - `GET /api/public/projects` returns the published projects and the units left.
 - `POST /api/leads/web` takes enquiries (CORS `*`, consent required).
-- Both lead routes (`/api/leads/web` and `/api/leads/meta`) go through `intakeLead()` in `src/lib/sales.ts`, which checks for duplicates, assigns leads round-robin and handles 15-minute escalation.
+- All lead routes go through `intakeLead()` in `src/lib/sales.ts`, which checks for duplicates, assigns leads round-robin and handles 15-minute escalation.
+- Platform leads (`src/lib/lead-intake.ts`): `/api/leads/in/<slug>?key=` for portals (99acres, MagicBricks, Housing, …), `/api/leads/meta` (Meta webhook with signature check, or `?key=` from a connector tool) and `/api/leads/google` (Google Ads lead form, `google_key`). Each source's key lives in the `Setting` table (`leads.key.<SOURCE>`) and is shown on Control → Lead sources. `parseLead()` reads the platform's own field names; `matchProject()` finds the project from names or codes. New leads alert the owner on Telegram.
 
 **Telegram site bot** (`src/lib/telegram.ts`, `src/lib/telegram-bot.ts`, webhook `src/app/api/telegram/route.ts`).
 - Telegram posts updates to `/api/telegram`, which checks the `x-telegram-bot-api-secret-token` header against `TELEGRAM_WEBHOOK_SECRET`. The bot token is `TELEGRAM_BOT_TOKEN`, added by the owner.
