@@ -13,6 +13,8 @@ export async function GET(req: NextRequest) {
   const vercelCron = process.env.CRON_SECRET && req.headers.get("authorization") === `Bearer ${process.env.CRON_SECRET}`;
   if (!vercelCron && (!key || req.nextUrl.searchParams.get("key") !== key)) return NextResponse.json({ error: "Not allowed" }, { status: 403 });
   const mail = inboxConfigured() ? await checkInbox() : null;
+  // ?only=mail checks the supplier mailbox without running the buying engine.
+  if (req.nextUrl.searchParams.get("only") === "mail") return NextResponse.json({ ok: true, mail });
   const r = await runEngine();
   return NextResponse.json({ ok: true, ...r, mail });
 }

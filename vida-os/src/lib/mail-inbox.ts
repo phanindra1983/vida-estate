@@ -90,7 +90,9 @@ export async function checkInbox(): Promise<InboxResult> {
         for await (const m of client.fetch(uids.slice(-500), { uid: true, envelope: true }, { uid: true })) {
           const from = m.envelope?.from?.[0]?.address?.toLowerCase() ?? "";
           const subject = m.envelope?.subject ?? "";
-          if (!from || from === own) continue;
+          if (!from) continue;
+          // Our own mail is skipped, except a reply to a test-mode email (it comes back from our own address).
+          if (from === own && !(/^\s*re:/i.test(subject) && /\[TEST for /i.test(subject))) continue;
           if (RFQ_NO.test(subject) || vendorByEmail.has(from)) wanted.push(m.uid);
         }
         // Pass 2: the full message for those only.
