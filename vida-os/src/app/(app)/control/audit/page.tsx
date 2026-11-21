@@ -9,7 +9,7 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
   const rows = await db.auditLog.findMany({
     where: {
       ...(type ? { entityType: type } : {}),
-      ...(q ? { OR: [{ summary: { contains: q } }, { userName: { contains: q } }] } : {}),
+      ...(q ? { OR: [{ summary: { contains: q, mode: "insensitive" } }, { userName: { contains: q, mode: "insensitive" } }] } : {}),
     },
     orderBy: { at: "desc" },
     take: 300,

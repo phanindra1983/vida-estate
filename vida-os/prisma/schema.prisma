@@ -1,6 +1,6 @@
 // Vida OS: Phase 0 (foundation) + Phase 1A (revenue) + Phase 1B (cost).
-// SQLite for local development. To move to Supabase / Postgres, change the
-// datasource provider to "postgresql" and DATABASE_URL; the models stay the same.
+// Postgres (Neon, through Vercel). DATABASE_URL is the pooled connection used by the app;
+// DATABASE_URL_UNPOOLED is the direct one used for schema changes.
 // Money is stored as whole rupees (Int). Status fields are plain strings; the
 // allowed values are listed in src/lib/constants.ts.
 
@@ -9,8 +9,9 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
 // ───────────── Phase 0: foundation ─────────────

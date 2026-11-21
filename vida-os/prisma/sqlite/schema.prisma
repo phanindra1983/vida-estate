@@ -1,0 +1,623 @@
+// Vida OS: Phase 0 (foundation) + Phase 1A (revenue) + Phase 1B (cost).
+// SQLite for local development. To move to Supabase / Postgres, change the
+// datasource provider to "postgresql" and DATABASE_URL; the models stay the same.
+// Money is stored as whole rupees (Int). Status fields are plain strings; the
+// allowed values are listed in src/lib/constants.ts.
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../node_modules/.prisma/sqlite-client"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:../dev.db"
+}
+
+// ───────────── Phase 0: foundation ─────────────
+
+model User {
+  id             String          @id @default(cuid())
+  name           String
+  email          String          @unique
+  passwordHash   String
+  role           String // see ROLES
+  phone          String?
+  active         Boolean         @default(true)
+  lastAssignedAt DateTime? // round-robin lead assignment
+  createdAt      DateTime        @default(now())
+  access         ProjectAccess[]
+  employee       Employee?
+}
+
+model ProjectAccess {
+  id        String  @id @default(cuid())
+  userId    String
+  projectId String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, projectId])
+}
+
+model Project {
+  id            String          @id @default(cuid())
+  code          String          @unique // cost-centre code, e.g. VP1
+  name          String
+  location      String
+  type          String // Apartments | Villas | Plots
+  status        String          @default("PLANNING") // PLANNING | LAUNCHING | UNDER_CONSTRUCTION | COMPLETED
+  reraNo        String?
+  description   String?
+  startingPrice Int?
+  launchDate    DateTime?
+  published     Boolean         @default(false)
+  createdAt     DateTime        @default(now())
+  towers        Tower[]
+  units         Unit[]
+  access        ProjectAccess[]
+  leads         Lead[]
+  plans         PaymentPlan[]
+  milestones    Milestone[]
+  reports       DailyReport[]
+  budgetLines   BudgetLine[]
+  requests      MaterialRequest[]
+  orders        PurchaseOrder[]
+  stock         StockMove[]
+  documents     Document[]
+}
+
+model Tower {
+  id         String      @id @default(cuid())
+  projectId  String
+  name       String
+  floors     Int
+  project    Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  units      Unit[]
+  milestones Milestone[]
+}
+
+model Unit {
+  id            String    @id @default(cuid())
+  projectId     String
+  towerId       String
+  number        String // e.g. A-1203
+  floor         Int
+  type          String // 2BHK | 3BHK | 4BHK
+  carpetSqft    Int
+  sbaSqft       Int // super built-up area
+  facing        String
+  price         Int // list price in rupees
+  status        String    @default("AVAILABLE") // AVAILABLE | BLOCKED | BOOKED
+  blockedById   String?
+  blockedLeadId String?
+  blockedUntil  DateTime?
+  project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tower         Tower     @relation(fields: [towerId], references: [id], onDelete: Cascade)
+  bookings      Booking[]
+
+  @@unique([projectId, number])
+}
+
+model CostCode {
+  id          String            @id @default(cuid())
+  code        String            @unique
+  name        String
+  budgetLines BudgetLine[]
+  requests    MaterialRequest[]
+  orders      PurchaseOrder[]
+}
+
+model Vendor {
+  id       String          @id @default(cuid())
+  name     String
+  gstin    String?
+  phone    String?
+  email    String?
+  category String // one of the supplier categories, e.g. "Steel & couplers"
+  rating   Int             @default(3)
+  type     String? // Manufacturer | Distributor | Dealer | Contractor | Rental | OEM branch
+  brands   String?
+  area     String?
+  address  String?
+  website  String?
+  sourceUrl String? // where the supplier was found (public research)
+  notes    String?
+  verified Boolean         @default(false) // true once the purchase team has called and confirmed them
+  isDemo   Boolean         @default(false) // fictional demo vendors
+  active   Boolean         @default(true)
+  quotes   Quote[]
+  orders   PurchaseOrder[]
+  bills    VendorBill[]
+}
+
+model Employee {
+  id          String   @id @default(cuid())
+  name        String
+  department  String
+  designation String
+  phone       String?
+  joinedOn    DateTime?
+  userId      String?  @unique
+  user        User?    @relation(fields: [userId], references: [id])
+}
+
+model ChannelPartner {
+  id            String   @id @default(cuid())
+  name          String
+  firm          String?
+  phone         String
+  reraAgentNo   String?
+  commissionPct Float    @default(2)
+  leads         Lead[]
+  payouts       Payout[]
+}
+
+model Document {
+  id           String   @id @default(cuid())
+  projectId    String?
+  name         String
+  category     String
+  url          String
+  uploadedById String
+  createdAt    DateTime @default(now())
+  project      Project? @relation(fields: [projectId], references: [id])
+}
+
+// Delegation of authority: for each action, an ordered chain of levels.
+// A request of amount A needs every level up to and including the first level
+// whose upToAmount >= A (null = no limit).
+model ApprovalRule {
+  id         String @id @default(cuid())
+  action     String // PURCHASE_ORDER | BUDGET_REVISION | VENDOR_PAYMENT | PAYOUT | DISCOUNT | MILESTONE
+  level      Int
+  role       String
+  upToAmount Int?
+
+  @@unique([action, level])
+}
+
+model ApprovalRequest {
+  id            String         @id @default(cuid())
+  action        String
+  entityType    String
+  entityId      String
+  title         String
+  amount        Int            @default(0)
+  projectId     String?
+  status        String         @default("PENDING") // PENDING | APPROVED | REJECTED
+  currentLevel  Int            @default(1)
+  requiredLevel Int
+  requestedById String
+  createdAt     DateTime       @default(now())
+  decidedAt     DateTime?
+  steps         ApprovalStep[]
+}
+
+model ApprovalStep {
+  id          String          @id @default(cuid())
+  requestId   String
+  level       Int
+  role        String
+  decision    String // APPROVED | REJECTED
+  comment     String?
+  decidedById String
+  decidedAt   DateTime        @default(now())
+  request     ApprovalRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+}
+
+// Append-only. Database triggers (prisma/triggers.sql) block UPDATE and DELETE.
+model AuditLog {
+  id         String   @id @default(cuid())
+  at         DateTime @default(now())
+  userId     String?
+  userName   String?
+  action     String // CREATE | UPDATE | APPROVE | REJECT | LOGIN | ...
+  entityType String
+  entityId   String?
+  summary    String
+  before     String? // JSON
+  after      String? // JSON
+}
+
+model Setting {
+  key   String @id
+  value String
+}
+
+// ───────────── Phase 1A: revenue ─────────────
+
+model Lead {
+  id               String          @id @default(cuid())
+  name             String
+  phone            String // normalised 10-digit
+  email            String?
+  projectId        String?
+  source           String // WEBSITE | META | 99ACRES | MAGICBRICKS | HOUSING | WHATSAPP | REFERRAL | WALK_IN | CHANNEL_PARTNER
+  campaign         String?
+  channelPartnerId String?
+  ownerId          String?
+  stage            String          @default("NEW") // see LEAD_STAGES
+  lostReason       String?
+  budget           String?
+  preferredType    String?
+  notes            String?
+  consentAt        DateTime?
+  createdAt        DateTime        @default(now())
+  firstCallAt      DateTime?
+  lastActivityAt   DateTime?
+  nextFollowUp     DateTime?
+  duplicateCount   Int             @default(0)
+  project          Project?        @relation(fields: [projectId], references: [id])
+  channelPartner   ChannelPartner? @relation(fields: [channelPartnerId], references: [id])
+  activities       Activity[]
+  bookings         Booking[]
+
+  @@index([phone])
+}
+
+model Activity {
+  id           String    @id @default(cuid())
+  leadId       String
+  userId       String?
+  type         String // CALL | WHATSAPP | NOTE | SITE_VISIT | STAGE | SYSTEM
+  note         String?
+  scheduledFor DateTime?
+  createdAt    DateTime  @default(now())
+  lead         Lead      @relation(fields: [leadId], references: [id], onDelete: Cascade)
+}
+
+model PaymentPlan {
+  id        String      @id @default(cuid())
+  projectId String
+  name      String
+  type      String // CLP (construction linked) | DOWN_PAYMENT
+  project   Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  stages    PlanStage[]
+  bookings  Booking[]
+}
+
+model PlanStage {
+  id           String      @id @default(cuid())
+  planId       String
+  seq          Int
+  name         String
+  pct          Float
+  milestoneKey String? // null = due on booking; otherwise raised when that milestone completes
+  plan         PaymentPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  demands      Demand[]
+}
+
+model Booking {
+  id             String      @id @default(cuid())
+  unitId         String
+  leadId         String
+  planId         String
+  buyerName      String
+  buyerPhone     String
+  buyerEmail     String?
+  agreementValue Int
+  tokenAmount    Int
+  paymentRef     String
+  bookedAt       DateTime    @default(now())
+  bookedById     String
+  status         String      @default("BOOKED") // BOOKED | AGREEMENT_SIGNED | REGISTERED | CANCELLED
+  unit           Unit        @relation(fields: [unitId], references: [id])
+  lead           Lead        @relation(fields: [leadId], references: [id])
+  plan           PaymentPlan @relation(fields: [planId], references: [id])
+  demands        Demand[]
+  receipts       Receipt[]
+  payouts        Payout[]
+}
+
+model Demand {
+  id          String    @id @default(cuid())
+  bookingId   String
+  planStageId String
+  number      String    @unique
+  amount      Int
+  raisedAt    DateTime  @default(now())
+  dueDate     DateTime
+  status      String    @default("DUE") // DUE | PART_PAID | PAID
+  booking     Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  stage       PlanStage @relation(fields: [planStageId], references: [id])
+  receipts    Receipt[]
+}
+
+model Receipt {
+  id          String   @id @default(cuid())
+  bookingId   String
+  demandId    String?
+  number      String   @unique
+  amount      Int
+  mode        String // NEFT | RTGS | CHEQUE | UPI
+  reference   String
+  receivedAt  DateTime @default(now())
+  enteredById String
+  booking     Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  demand      Demand?  @relation(fields: [demandId], references: [id])
+}
+
+model Payout {
+  id               String          @id @default(cuid())
+  bookingId        String
+  type             String // CP_COMMISSION | SALES_INCENTIVE
+  payeeName        String
+  channelPartnerId String?
+  userId           String?
+  ratePct          Float
+  amount           Int
+  status           String          @default("PENDING") // PENDING | IN_APPROVAL | APPROVED | PAID | REJECTED
+  createdAt        DateTime        @default(now())
+  booking          Booking         @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  channelPartner   ChannelPartner? @relation(fields: [channelPartnerId], references: [id])
+}
+
+// ───────────── Phase 1B: cost ─────────────
+
+model Milestone {
+  id           String        @id @default(cuid())
+  projectId    String
+  towerId      String?
+  key          String // links to PlanStage.milestoneKey, e.g. SLAB_5
+  name         String
+  seq          Int
+  plannedStart DateTime
+  plannedEnd   DateTime
+  actualStart  DateTime?
+  actualEnd    DateTime?
+  progressPct  Int           @default(0)
+  status       String        @default("NOT_STARTED") // NOT_STARTED | IN_PROGRESS | AWAITING_APPROVAL | DONE
+  project      Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tower        Tower?        @relation(fields: [towerId], references: [id])
+  reports      DailyReport[]
+}
+
+model DailyReport {
+  id            String     @id @default(cuid())
+  projectId     String
+  milestoneId   String?
+  date          DateTime
+  engineerId    String
+  workDone      String
+  labourCount   Int
+  materialsUsed String?
+  issues        String?
+  progressPct   Int?
+  photos        String // JSON array of /uploads/... paths, with time stamps
+  createdAt     DateTime   @default(now())
+  project       Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  milestone     Milestone? @relation(fields: [milestoneId], references: [id])
+}
+
+model BudgetLine {
+  id          String           @id @default(cuid())
+  projectId   String
+  costCodeId  String
+  description String
+  amount      Int
+  revision    Int              @default(0)
+  project     Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  costCode    CostCode         @relation(fields: [costCodeId], references: [id])
+  revisions   BudgetRevision[]
+
+  @@unique([projectId, costCodeId])
+}
+
+model BudgetRevision {
+  id            String     @id @default(cuid())
+  budgetLineId  String
+  oldAmount     Int
+  newAmount     Int
+  reason        String
+  status        String     @default("PENDING") // PENDING | APPROVED | REJECTED
+  requestedById String
+  triggeredByPo String?
+  createdAt     DateTime   @default(now())
+  line          BudgetLine @relation(fields: [budgetLineId], references: [id], onDelete: Cascade)
+}
+
+model MaterialRequest {
+  id            String          @id @default(cuid())
+  number        String          @unique
+  projectId     String
+  costCodeId    String
+  item          String
+  qty           Float
+  unit          String
+  neededBy      DateTime
+  note          String?
+  status        String          @default("SUBMITTED") // SUBMITTED | APPROVED | REJECTED | ORDERED
+  requestedById String
+  createdAt     DateTime        @default(now())
+  project       Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  costCode      CostCode        @relation(fields: [costCodeId], references: [id])
+  quotes        Quote[]
+  orders        PurchaseOrder[]
+}
+
+model Quote {
+  id           String          @id @default(cuid())
+  requestId    String
+  vendorId     String
+  rate         Float
+  gstPct       Float
+  deliveryDays Int
+  selected     Boolean         @default(false)
+  request      MaterialRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  vendor       Vendor          @relation(fields: [vendorId], references: [id])
+}
+
+model PurchaseOrder {
+  id          String           @id @default(cuid())
+  number      String           @unique
+  requestId   String?
+  projectId   String
+  costCodeId  String
+  vendorId    String
+  item        String
+  qty         Float
+  unit        String
+  rate        Float
+  gstPct      Float
+  amount      Int // incl. GST
+  status      String           @default("PENDING_APPROVAL") // BUDGET_HOLD | PENDING_APPROVAL | APPROVED | REJECTED | PARTLY_RECEIVED | RECEIVED | CLOSED
+  createdById String
+  createdAt   DateTime         @default(now())
+  request     MaterialRequest? @relation(fields: [requestId], references: [id])
+  project     Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  costCode    CostCode         @relation(fields: [costCodeId], references: [id])
+  vendor      Vendor           @relation(fields: [vendorId], references: [id])
+  receipts    GoodsReceipt[]
+  bills       VendorBill[]
+}
+
+model GoodsReceipt {
+  id           String        @id @default(cuid())
+  number       String        @unique
+  poId         String
+  qty          Float
+  challanNo    String
+  photo        String?
+  note         String?
+  receivedById String
+  receivedAt   DateTime      @default(now())
+  po           PurchaseOrder @relation(fields: [poId], references: [id], onDelete: Cascade)
+}
+
+model StockMove {
+  id        String   @id @default(cuid())
+  projectId String
+  item      String
+  unit      String
+  qty       Float // + receipt, - issue
+  type      String // RECEIPT | ISSUE
+  reference String
+  at        DateTime @default(now())
+  userId    String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+model VendorBill {
+  id          String        @id @default(cuid())
+  poId        String
+  vendorId    String
+  billNo      String
+  billDate    DateTime
+  qty         Float
+  rate        Float
+  amount      Int // incl. GST
+  tdsPct      Float         @default(1)
+  match       String // MATCHED | MISMATCH
+  matchNote   String?
+  status      String        @default("ENTERED") // ENTERED | ON_HOLD | PAYABLE | IN_PAYMENT | PAID
+  enteredById String
+  createdAt   DateTime      @default(now())
+  paidAt      DateTime?
+  po          PurchaseOrder @relation(fields: [poId], references: [id], onDelete: Cascade)
+  vendor      Vendor        @relation(fields: [vendorId], references: [id])
+}
+
+// ───────────── Procurement engine ─────────────
+// The engine reads the programme (milestones), works out when each material must be
+// ordered from its lead time, sends enquiries (RFQs) to vendors, collects quotes on a
+// vendor quote page, builds the comparison statement and, once approved, raises the PO.
+
+model Material {
+  id            String                @id @default(cuid())
+  code          String                @unique
+  name          String
+  unit          String
+  category      String // matches Vendor.category
+  costCodeId    String
+  leadTimeDays  Int // vendor delivery lead time after the order
+  quoteDays     Int                   @default(5) // how long vendors get to quote
+  refRate       Float? // last purchase or market reference rate per unit, for the comparison
+  specs         String?
+  package       String? // e.g. "Structure: concrete"
+  norm          String? // consumption thumb rule for planning
+  active        Boolean               @default(true)
+  requirements  MaterialRequirement[]
+  rfqs          Rfq[]
+}
+
+/** Bill of quantities: how much of a material a milestone needs on site, and when. */
+model MaterialRequirement {
+  id          String   @id @default(cuid())
+  projectId   String
+  milestoneId String
+  materialId  String
+  qty         Float
+  neededDaysBeforeStart Int @default(7) // must be on site this many days before the milestone starts
+  material    Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  rfqs        Rfq[]
+}
+
+model Rfq {
+  id            String              @id @default(cuid())
+  number        String              @unique
+  projectId     String
+  requirementId String?
+  materialId    String
+  milestoneId   String?
+  qty           Float
+  unit          String
+  needOnSite    DateTime
+  orderBy       DateTime
+  quoteDueAt    DateTime
+  status        String              @default("SENT") // SENT | READY | IN_APPROVAL | AWARDED | REJECTED | CANCELLED
+  live          Boolean             @default(false) // true: emails go to the real suppliers even while test mode is on
+  recommendedQuoteId String?
+  awardedQuoteId String?
+  poId          String?
+  note          String?
+  createdById   String?
+  createdAt     DateTime            @default(now())
+  material      Material            @relation(fields: [materialId], references: [id])
+  requirement   MaterialRequirement? @relation(fields: [requirementId], references: [id])
+  invites       RfqInvite[]
+  quotes        RfqQuote[]
+}
+
+model RfqInvite {
+  id          String    @id @default(cuid())
+  rfqId       String
+  vendorId    String
+  token       String    @unique
+  status      String    @default("SENT") // SENT | OPENED | QUOTED | DECLINED
+  sentAt      DateTime  @default(now())
+  openedAt    DateTime?
+  remindedAt  DateTime?
+  rfq         Rfq       @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+}
+
+model RfqQuote {
+  id           String   @id @default(cuid())
+  rfqId        String
+  vendorId     String
+  rate         Float // per unit, before GST
+  gstPct       Float
+  freight      Int      @default(0) // total, before GST
+  deliveryDays Int
+  paymentTerms String?
+  validityDays Int      @default(15)
+  remarks      String?
+  submittedAt  DateTime @default(now())
+  rfq          Rfq      @relation(fields: [rfqId], references: [id], onDelete: Cascade)
+
+  @@unique([rfqId, vendorId])
+}
+
+/** Every message the engine sends (or queues), so nothing goes out unrecorded. */
+model OutboxMessage {
+  id        String   @id @default(cuid())
+  channel   String // EMAIL | WHATSAPP
+  to        String
+  subject   String?
+  body      String
+  status    String // SENT | QUEUED | FAILED
+  error     String?
+  refType   String?
+  refId     String?
+  createdAt DateTime @default(now())
+}

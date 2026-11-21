@@ -7,7 +7,8 @@ import { runEngine } from "@/lib/procurement";
  */
 export async function GET(req: NextRequest) {
   const key = process.env.CRON_KEY;
-  if (!key || req.nextUrl.searchParams.get("key") !== key) return NextResponse.json({ error: "Not allowed" }, { status: 403 });
+  const vercelCron = process.env.CRON_SECRET && req.headers.get("authorization") === `Bearer ${process.env.CRON_SECRET}`;
+  if (!vercelCron && (!key || req.nextUrl.searchParams.get("key") !== key)) return NextResponse.json({ error: "Not allowed" }, { status: 403 });
   const r = await runEngine();
   return NextResponse.json({ ok: true, ...r });
 }

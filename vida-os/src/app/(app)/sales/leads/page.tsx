@@ -24,7 +24,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: SP }) 
 
   const where: Prisma.LeadWhereInput = { AND: [leadScope(u)] };
   const and = where.AND as Prisma.LeadWhereInput[];
-  if (q) and.push({ OR: [{ name: { contains: q } }, { phone: { contains: q.replace(/\D/g, "") || q } }] });
+  if (q) and.push({ OR: [{ name: { contains: q, mode: "insensitive" } }, { phone: { contains: q.replace(/\D/g, "") || q } }] });
   if (projectId) and.push({ projectId });
   if (source) and.push({ source });
   if (stage) and.push({ stage });

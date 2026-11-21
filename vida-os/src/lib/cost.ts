@@ -140,13 +140,20 @@ export async function saveImages(files: File[], folder: string): Promise<SavedPh
   const day = new Date().toISOString().slice(0, 10);
   const rel = path.join("uploads", folder, day);
   const abs = path.join(process.cwd(), "public", rel);
-  await mkdir(abs, { recursive: true });
   const out: SavedPhoto[] = [];
   for (const f of files) {
     if (!f.type.startsWith("image/")) throw new Error(`${f.name} is not an image`);
     if (f.size > 6 * 1024 * 1024) throw new Error(`${f.name} is larger than 6 MB`);
     const ext = f.type === "image/png" ? "png" : f.type === "image/webp" ? "webp" : "jpg";
     const name = `${randomUUID()}.${ext}`;
+    if (process.env.BLOB_READ_WRITE_TOKEN) {
+      // Online: Vercel Blob storage (the server's own disk is not kept between requests).
+      const { put } = await import("@vercel/blob");
+      const blob = await put(path.posix.join("uploads", folder, day, name), f, { access: "public", contentType: f.type });
+      out.push({ path: blob.url, takenAt: new Date().toISOString() });
+      continue;
+    }
+    await mkdir(abs, { recursive: true });
     await writeFile(path.join(abs, name), Buffer.from(await f.arrayBuffer()));
     out.push({ path: "/" + path.posix.join("uploads", folder, day, name), takenAt: new Date().toISOString() });
   }
