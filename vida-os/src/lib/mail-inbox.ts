@@ -146,7 +146,7 @@ export async function checkInbox(): Promise<InboxResult> {
           const who = vendor?.name ?? from;
           const files = attachments.length ? `\n📎 ${attachments.map((a) => esc(a.name)).join(", ")}` : "";
           const r = await db.rfq.findUnique({ where: { id: rfq.id }, select: { projectId: true } });
-          await notifyRoles(["PURCHASE", "PROJECT_MANAGER", "GM_PROJECTS"],
+          await notifyRoles(["PURCHASE", "PROJECT_MANAGER", "GM_PROJECTS", "MD"],
             `📩 <b>${esc(who)}</b> replied on <b>${rfq.number}</b>\n${esc(body.slice(0, 300))}${body.length > 300 ? "…" : ""}${files}\n${publicUrl(`/procurement/rfq/${rfq.id}`)}`,
             { projectId: r?.projectId });
         }
