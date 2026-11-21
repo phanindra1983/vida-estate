@@ -2,19 +2,12 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { audit } from "@/lib/audit";
-import { botConfigured, botUsername, tg } from "@/lib/telegram";
+import { botConfigured, botUsername, tg, connectBot } from "@/lib/telegram";
 import { ROLE_LABEL } from "@/lib/constants";
 import { PageHeader, Card, Table, Button, Notice, Badge } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
-const COMMANDS = [
-  { command: "report", description: "Today's site report with photos" },
-  { command: "material", description: "Ask for material" },
-  { command: "approvals", description: "What is waiting for you" },
-  { command: "cancel", description: "Stop what you are doing" },
-  { command: "help", description: "What the bot can do" },
-];
 
 async function connect() {
   "use server";
@@ -23,8 +16,7 @@ async function connect() {
   const secret = process.env.TELEGRAM_WEBHOOK_SECRET;
   if (!base?.startsWith("https://") || !secret) redirect("/control/telegram?error=" + encodeURIComponent("PUBLIC_OS_URL (https) and TELEGRAM_WEBHOOK_SECRET must be set first."));
   try {
-    await tg("setWebhook", { url: `${base}/api/telegram`, secret_token: secret, allowed_updates: ["message", "callback_query"], drop_pending_updates: true });
-    await tg("setMyCommands", { commands: COMMANDS });
+    await connectBot();
   } catch (e) {
     redirect("/control/telegram?error=" + encodeURIComponent((e as Error).message));
   }

@@ -80,3 +80,20 @@ export async function notifyRoles(roles: string[], text: string, opts: { project
     }
   }
 }
+
+export const COMMANDS = [
+  { command: "report", description: "Today's site report with photos" },
+  { command: "material", description: "Ask for material" },
+  { command: "approvals", description: "What is waiting for you" },
+  { command: "cancel", description: "Stop what you are doing" },
+  { command: "help", description: "What the bot can do" },
+];
+
+const webhookUrl = () => `${process.env.PUBLIC_OS_URL}/api/telegram`;
+
+/** Point Telegram at this app's webhook and set the command menu. */
+export async function connectBot() {
+  await tg("setWebhook", { url: webhookUrl(), secret_token: process.env.TELEGRAM_WEBHOOK_SECRET, allowed_updates: ["message", "callback_query"], drop_pending_updates: true });
+  await tg("setMyCommands", { commands: COMMANDS });
+}
+
