@@ -27,8 +27,9 @@ export type Attachment = { name: string; url: string; size: number };
 /** Keep only what the supplier wrote now, not the quoted history below it. */
 export function newPart(text: string) {
   const lines = text.replace(/\r/g, "").split("\n");
-  const cut = lines.findIndex((l) =>
-    /^On .{6,200}wrote:\s*$/.test(l.trim()) || /^-{2,}\s*Original Message/i.test(l.trim()) ||
+  const cut = lines.findIndex((l, i) =>
+    // Gmail and Outlook may wrap "On <date>, <name> wrote:" over two lines.
+    /^On .{6,200}wrote:\s*$/.test(l.trim()) || /^On \S.{4,200}$/.test(l.trim()) && /wrote:\s*$/.test(`${l} ${lines[i + 1] ?? ""}`.trim()) || /^-{2,}\s*Original Message/i.test(l.trim()) ||
     /^From:\s.+/.test(l.trim()) && lines.slice(0, lines.indexOf(l)).some((x) => x.trim()) ||
     l.startsWith(">"));
   const kept = (cut > 0 ? lines.slice(0, cut) : lines).join("\n").replace(/\n{3,}/g, "\n\n").trim();
