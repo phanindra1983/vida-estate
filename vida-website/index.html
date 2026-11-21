@@ -435,7 +435,7 @@ body.paused *,body.paused *::before,body.paused *::after{animation-play-state:pa
       <div class="reveal">
         <p class="eyebrow">Live from site</p>
         <h2>Watch it rise.</h2>
-        <p class="lede">Our site teams update this every week. Drag the timeline to see every milestone, planned against actual.</p>
+        <p class="lede">Straight from our site teams' reports. Drag the timeline to see every milestone, planned against actual, including where we are running late.</p>
       </div>
       <div class="tabs" role="group" aria-label="Choose a tower" id="tabs"></div>
       <div class="track" id="track"><div class="fill" aria-hidden="true"></div><div class="dots" aria-hidden="true"></div><div class="handle" aria-hidden="true"></div>
@@ -448,7 +448,7 @@ body.paused *,body.paused *::before,body.paused *::after{animation-play-state:pa
         <div><dt>Actual</dt><dd id="rAct">–</dd></div>
         <div><dt>Status</dt><dd id="rStat">–</dd></div>
       </dl>
-      <p class="note">Sample timeline for launch. Live data connects to Vida OS before go-live.</p>
+      <p class="note">Sample timeline. Live data is loading from Vida OS.</p>
     </div>
   </section>
 
@@ -634,27 +634,53 @@ body.paused *,body.paused *::before,body.paused *::after{animation-play-state:pa
   document.addEventListener('visibilitychange', () => document.body.classList.toggle('paused', document.hidden));
 
   // ── live from site: the interactive moment ──
-  const TOWERS = {
-    'Vida Aurum · Tower A': [['Foundation', 'Apr 2026', 'Apr 2026'], ['Slab 5', 'Jun 2026', 'Jun 2026'], ['Slab 10', 'Aug 2026', 'Nov 2026'], ['Slab 15', 'Oct 2026'], ['Slab 20', 'Dec 2026'], ['Brickwork', 'Mar 2027'], ['Finishes', 'Aug 2027'], ['Handover', 'Dec 2027']],
-    'Vida Aurum · Tower B': [['Foundation', 'May 2026', 'Jun 2026'], ['Slab 5', 'Aug 2026'], ['Slab 10', 'Oct 2026'], ['Slab 15', 'Dec 2026'], ['Slab 20', 'Feb 2027'], ['Brickwork', 'May 2027'], ['Finishes', 'Oct 2027'], ['Handover', 'Feb 2028']],
+  // Sample shown only if Vida OS can't be reached; live data replaces it below.
+  let TOWERS = {
+    'Vida Aurum · Tower A': [['Foundation', 'Apr 2026', 'Apr 2026'], ['Slab 5', 'Jun 2026', 'Jun 2026'], ['Slab 10', 'Aug 2026'], ['Slab 15', 'Oct 2026'], ['Slab 20', 'Dec 2026'], ['Brickwork', 'Mar 2027'], ['Finishes', 'Aug 2027'], ['Handover', 'Dec 2027']],
   };
   const tabs = $('#tabs'), track = $('#track'), dots = $('.dots', track), scrub = $('#scrub');
-  let tower = Object.keys(TOWERS)[0];
-  Object.keys(TOWERS).forEach(name => { const b = document.createElement('button'); b.type = 'button'; b.textContent = name; b.setAttribute('aria-pressed', name === tower); b.onclick = () => { tower = name; [...tabs.children].forEach(x => x.setAttribute('aria-pressed', x === b)); drawTower(true); }; tabs.appendChild(b); });
+  let tower;
+  function drawTabs() {
+    tabs.innerHTML = ''; tower = Object.keys(TOWERS)[0];
+    Object.keys(TOWERS).forEach(name => { const b = document.createElement('button'); b.type = 'button'; b.textContent = name; b.setAttribute('aria-pressed', name === tower); b.onclick = () => { tower = name; [...tabs.children].forEach(x => x.setAttribute('aria-pressed', x === b)); drawTower(true); }; tabs.appendChild(b); });
+    drawTower(true);
+  }
+  // A milestone: [name, planned, actual, percent, late]. No actual = not finished.
+  const current = ms => ms.findIndex(m => !m[2]);
   function drawTower(reset) {
-    const ms = TOWERS[tower]; const doneCount = ms.filter(m => m[2]).length;
-    dots.innerHTML = ms.map((m, i) => `<span class="dot ${m[2] ? 'done' : ''} ${i === doneCount ? 'now' : ''}"><span>${m[0]}</span></span>`).join('');
-    scrub.max = ms.length - 1; if (reset) scrub.value = Math.min(doneCount, ms.length - 1); show();
+    const ms = TOWERS[tower]; const now = current(ms);
+    dots.innerHTML = ms.map((m, i) => `<span class="dot ${m[2] ? 'done' : ''} ${i === now ? 'now' : ''}"><span>${m[0]}</span></span>`).join('');
+    scrub.max = ms.length - 1; if (reset) scrub.value = now < 0 ? ms.length - 1 : now; show();
   }
   function show() {
-    const ms = TOWERS[tower], i = +scrub.value, m = ms[i];
+    const ms = TOWERS[tower], i = +scrub.value, m = ms[i], now = current(ms);
     track.style.setProperty('--fill', (i / (ms.length - 1) * 100) + '%');
-    $('#rName').textContent = m[0]; $('#rPlan').textContent = m[1]; $('#rAct').textContent = m[2] || (i === ms.filter(x => x[2]).length ? 'In progress' : 'Upcoming');
-    const st = $('#rStat'); const late = m[2] && m[2] !== m[1];
-    st.textContent = m[2] ? (late ? 'Done, late' : 'Done, on time') : (i === ms.filter(x => x[2]).length ? 'Under way' : 'Planned');
-    st.className = m[2] ? (late ? 'late' : 'ok') : '';
+    $('#rName').textContent = m[0]; $('#rPlan').textContent = m[1];
+    const underWay = !m[2] && (m[3] > 0 || i === now);
+    $('#rAct').textContent = m[2] || (underWay ? (m[3] ? `${m[3]}% done` : 'In progress') : 'Upcoming');
+    const st = $('#rStat');
+    st.textContent = m[2] ? (m[4] ? 'Done, late' : 'Done, on time') : underWay ? (m[4] ? 'Under way, running late' : 'Under way') : (m[4] ? 'Planned, running late' : 'Planned');
+    st.className = m[2] ? (m[4] ? 'late' : 'ok') : (m[4] ? 'late' : '');
   }
-  scrub.addEventListener('input', show); drawTower(true);
+  scrub.addEventListener('input', show); drawTabs();
+
+  // Live progress from Vida OS: the same dates the site team works to.
+  const month = d => new Date(d).toLocaleDateString('en-IN', { month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' });
+  const WEEK = 7 * 864e5;
+  fetch((window.VIDA_OS_URL || 'http://localhost:3100').replace(/\/$/, '') + '/api/public/progress').then(r => r.ok ? r.json() : null).then(d => {
+    if (!d?.towers?.length) return;
+    const live = {};
+    d.towers.forEach(t => {
+      live[`${t.project} · ${t.tower}`] = t.milestones.map(m => {
+        const plan = new Date(m.plannedEnd).getTime();
+        const late = m.actualEnd ? new Date(m.actualEnd).getTime() - plan > WEEK : Date.now() - plan > WEEK;
+        return [m.name, month(m.plannedEnd), m.actualEnd ? month(m.actualEnd) : null, m.progressPct, late];
+      });
+    });
+    TOWERS = live; drawTabs();
+    const last = d.towers.map(t => t.lastReport).filter(Boolean).sort().pop();
+    $('#live .note').textContent = 'Live from Vida OS, the system our site teams report into.' + (last ? ` Last site report ${new Date(last).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' })}.` : '');
+  }).catch(() => {});
 
   // ── Vida OS link: the staff login and the enquiry endpoint live here ──
   // The Vida OS address comes from config.js (one line to change per environment).

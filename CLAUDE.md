@@ -68,6 +68,7 @@ node prisma/import-data.mjs   # (re)load materials and suppliers from prisma/dat
 
 **Website integration.**
 - `GET /api/public/projects` returns the published projects and the units left.
+- `GET /api/public/progress` returns tower milestones (planned against actual) for published projects under construction. The website's "Live from site" timeline reads it, and its project cards read `/api/public/projects`.
 - `POST /api/leads/web` takes enquiries (CORS `*`, consent required).
 - All lead routes go through `intakeLead()` in `src/lib/sales.ts`, which checks for duplicates, assigns leads round-robin and handles 15-minute escalation.
 - Platform leads (`src/lib/lead-intake.ts`): `/api/leads/in/<slug>?key=` for portals (99acres, MagicBricks, Housing, …), `/api/leads/meta` (Meta webhook with signature check, or `?key=` from a connector tool) and `/api/leads/google` (Google Ads lead form, `google_key`). Each source's key lives in the `Setting` table (`leads.key.<SOURCE>`) and is shown on Control → Lead sources. `parseLead()` reads the platform's own field names; `matchProject()` finds the project from names or codes. New leads alert the owner on Telegram.
