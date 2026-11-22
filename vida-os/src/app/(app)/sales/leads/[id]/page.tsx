@@ -8,6 +8,8 @@ import { needsEscalation, waitingMinutes, effectiveStatus } from "@/lib/sales";
 import { PageHeader, Card, Badge, Status, Button, Field, LinkButton } from "@/components/ui";
 import { logActivity, scheduleVisit, changeStage, reassignLead, blockUnit } from "../../actions";
 import { Flash, one, waLink, type SP } from "../../_ui";
+import { callLeadWithAi } from "../../calls/actions";
+import { bolnaConfigured, getConfig, STATUS_LABEL } from "@/lib/bolna";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +36,11 @@ export default async function LeadPage({ params, searchParams }: { params: Promi
       : [],
     db.unit.findFirst({ where: { blockedLeadId: lead.id, status: "BLOCKED" } }),
   ]);
+  const [aiCalls, aiCfg] = await Promise.all([
+    db.aiCall.findMany({ where: { leadId: lead.id }, orderBy: { createdAt: "desc" }, take: 5 }),
+    getConfig(),
+  ]);
+  const aiReady = bolnaConfigured() && !!aiCfg.agentId;
   const available = units.filter((x) => effectiveStatus(x) === "AVAILABLE" && (!lead.preferredType || x.type === lead.preferredType || sp.allTypes));
   const userName = new Map(users.map((x) => [x.id, x.name]));
   const wait = waitingMinutes(lead);
@@ -161,6 +168,33 @@ export default async function LeadPage({ params, searchParams }: { params: Promi
               </div>
             </form>
           </Card>
+
+          {(aiReady || aiCalls.length > 0) && (
+            <Card title="AI caller">
+              {aiCalls.length === 0 && <p className="mb-3 text-sm text-stone">No AI calls to this buyer yet.</p>}
+              <ul className="mb-3 grid gap-3 text-sm">
+                {aiCalls.map((c) => (
+                  <li key={c.id}>
+                    <p><Badge tone={c.status === "completed" ? "good" : "neutral"}>{STATUS_LABEL[c.status] ?? c.status}</Badge> <span className="text-stone">{ago(c.createdAt)}{c.durationSec ? ` · talked ${Math.round(c.durationSec / 6) / 10} min` : ""}</span></p>
+                    {c.summary && <p className="mt-1">{c.summary}</p>}
+                    {c.transcript && (
+                      <details className="mt-1">
+                        <summary className="cursor-pointer text-xs text-stone">Full conversation</summary>
+                        <pre className="mt-2 whitespace-pre-wrap font-sans text-xs">{c.transcript}</pre>
+                      </details>
+                    )}
+                  </li>
+                ))}
+              </ul>
+              {aiReady && lead.consentAt && (
+                <form action={callLeadWithAi}>
+                  <input type="hidden" name="leadId" value={lead.id} />
+                  <input type="hidden" name="back" value={path} />
+                  <Button variant="secondary" size="sm">Call with AI now</Button>
+                </form>
+              )}
+            </Card>
+          )}
 
           <Card title="Schedule a site visit">
             <form action={scheduleVisit} className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">

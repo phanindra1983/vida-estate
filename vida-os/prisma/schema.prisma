@@ -258,8 +258,33 @@ model Lead {
   channelPartner   ChannelPartner? @relation(fields: [channelPartnerId], references: [id])
   activities       Activity[]
   bookings         Booking[]
+  aiCalls          AiCall[]
 
   @@index([phone])
+}
+
+/// A call placed by the AI caller (Bolna). Results arrive by webhook and are re-read from Bolna.
+model AiCall {
+  id           String   @id @default(cuid())
+  leadId       String?
+  executionId  String?  @unique
+  toNumber     String
+  status       String   @default("QUEUED") // QUEUED, then Bolna's own status (completed, no-answer, busy, failed, ...)
+  trigger      String   @default("MANUAL") // AUTO (new lead) | MANUAL | TEST
+  startedById  String?
+  durationSec  Int?
+  summary      String?
+  transcript   String?
+  recordingUrl String?
+  costCents    Float?
+  error        String?
+  alerted      Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  lead         Lead?    @relation(fields: [leadId], references: [id], onDelete: SetNull)
+
+  @@index([leadId, createdAt])
+  @@index([status, createdAt])
 }
 
 model Activity {

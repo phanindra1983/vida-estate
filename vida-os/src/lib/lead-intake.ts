@@ -3,6 +3,7 @@ import { db } from "./db";
 import { intakeLead } from "./sales";
 import { LEAD_SOURCES } from "./constants";
 import { send, esc, notifyRoles } from "./telegram";
+import { autoCallNewLead } from "./bolna";
 
 /**
  * Leads arriving from ad platforms and property portals.
@@ -145,7 +146,7 @@ export async function noteArrival(source: string, test = false) {
   await db.setting.upsert({ where: { key }, create: { key, value }, update: { value } });
 }
 
-/** Telegram: the assigned salesperson (or the sales managers, if nobody is assigned) hears at once. */
+/** Telegram: the assigned salesperson (or the sales managers, if nobody is assigned) hears at once. Then the AI caller, if on. */
 export async function announceLead(leadId: string) {
   try {
     const lead = await db.lead.findUnique({ where: { id: leadId }, include: { project: true } });
@@ -157,4 +158,6 @@ export async function announceLead(leadId: string) {
   } catch {
     // An alert failing must never lose the lead.
   }
+  // If the MD switched it on, the AI caller rings the buyer within a minute (9 am to 9 pm).
+  await autoCallNewLead(leadId);
 }
