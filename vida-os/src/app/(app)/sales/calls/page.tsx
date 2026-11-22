@@ -56,9 +56,10 @@ export default async function CallCentrePage({ searchParams }: { searchParams: S
         <Stat label="Average conversation" value={mins(avg)} />
         <Stat
           label="Bolna balance"
-          value={acct?.ok && acct.wallet != null ? `$${Number(acct.wallet).toFixed(2)}` : "–"}
+          // Bolna reports the wallet in US cents (500 = $5.00, as its dashboard shows).
+          value={acct?.ok && acct.wallet != null ? `$${(Number(acct.wallet) / 100).toFixed(2)}` : "–"}
           sub={acct?.ok ? "Top up on bolna.ai" : "Not connected"}
-          tone={acct?.ok && (acct.wallet ?? 0) < 5 ? "bad" : undefined}
+          tone={acct?.ok && (acct.wallet ?? 0) < 200 ? "bad" : undefined}
         />
       </div>
 
