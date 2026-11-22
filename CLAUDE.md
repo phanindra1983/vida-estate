@@ -13,7 +13,7 @@ Two parts of Vida Estates (a real estate developer in Hyderabad), in one Git rep
 
 **Online:**
 - Website: https://vida-estates.vercel.app. Vercel project `vida-estates`, deployed from the repo root. The root `.vercelignore` uploads only `vida-website/`.
-- Vida OS: https://vida-os-eosin.vercel.app. Vercel project `vida-os`, deployed from `vida-os/`, region `sin1`. It uses Neon Postgres and Vercel Blob (for photos).
+- Vida OS: https://os.vidaestates.co.in (also https://vida-os-eosin.vercel.app; DNS is a CNAME at GoDaddy). Vercel project `vida-os`, deployed from `vida-os/`, region `sin1`. It uses Neon Postgres and Vercel Blob (for photos).
 - Neither project is connected to Git. Deploys are manual: `npx vercel@latest deploy --prod --yes`, run from the matching directory.
 
 ## Commands (run in `vida-os/`)
