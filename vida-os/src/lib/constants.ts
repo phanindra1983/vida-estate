@@ -58,6 +58,7 @@ export const LEAD_SOURCES: Record<string, string> = {
   WALK_IN: "Walk-in",
   CHANNEL_PARTNER: "Channel partner",
   TELEGRAM: "Added on Telegram",
+  STAFF: "Added by staff",
 };
 
 export const LEAD_STAGES: { key: string; label: string }[] = [

@@ -254,6 +254,7 @@ model Lead {
   lastActivityAt   DateTime?
   nextFollowUp     DateTime?
   duplicateCount   Int             @default(0)
+  doNotCallAt      DateTime? // buyer asked not to be called again; the AI caller skips them
   project          Project?        @relation(fields: [projectId], references: [id])
   channelPartner   ChannelPartner? @relation(fields: [channelPartnerId], references: [id])
   activities       Activity[]
@@ -279,12 +280,32 @@ model AiCall {
   costCents    Float?
   error        String?
   alerted      Boolean  @default(false)
+  campaignId   String?
+  projectId    String? // the lead's project when the call was placed (for reports)
+  interest     String? // INTERESTED | MAYBE | NOT_INTERESTED | CALL_BACK | WRONG_NUMBER | DO_NOT_CALL (Bolna extraction)
+  visitNote    String? // site visit day/time the buyer agreed to, if any
+  extracted    String? // raw Bolna extracted_data JSON
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  lead         Lead?    @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  lead         Lead?        @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  campaign     AiCampaign?  @relation(fields: [campaignId], references: [id], onDelete: SetNull)
 
   @@index([leadId, createdAt])
   @@index([status, createdAt])
+  @@index([campaignId])
+  @@index([createdAt])
+}
+
+/// A list of buyers the AI caller rings one after another.
+model AiCampaign {
+  id          String   @id @default(cuid())
+  name        String
+  audience    String // what was chosen, in words, e.g. "Vida Aurum · New, Contacted · no activity 7+ days"
+  status      String   @default("RUNNING") // RUNNING | STOPPED | DONE
+  total       Int      @default(0)
+  createdById String
+  createdAt   DateTime @default(now())
+  calls       AiCall[]
 }
 
 model Activity {
