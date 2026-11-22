@@ -89,6 +89,9 @@ export default async function CampaignsPage({ searchParams }: { searchParams: SP
                 </select>
               </Field>
             </div>
+            <Field label="Start calling" hint="Leave empty to start now. Calls only go out between 9 am and 9 pm.">
+              <input className="input" type="datetime-local" name="startAt" defaultValue={one(sp.startAt) ?? ""} />
+            </Field>
             <input type="hidden" name="count" value="1" />
             {matching !== null && (
               <p className="rounded-lg bg-[#f6f4f0] px-3 py-2 text-sm">
@@ -112,6 +115,9 @@ export default async function CampaignsPage({ searchParams }: { searchParams: SP
                 {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
             </Field>
+            <Field label="Start calling" hint="Leave empty to start now.">
+              <input className="input" type="datetime-local" name="startAt" />
+            </Field>
             <Field label="One buyer per line: name and mobile number" hint="Copy two columns from Excel, or type them. Up to 200 lines.">
               <textarea className="input min-h-40 font-mono text-xs" name="list" required placeholder={"Ravi Kumar, 9876543210\nSita Reddy 9123456780"} />
             </Field>
@@ -128,7 +134,7 @@ export default async function CampaignsPage({ searchParams }: { searchParams: SP
             const s = stats[i];
             return (
               <tr key={c.id} className="align-top">
-                <td className="whitespace-nowrap">{datetime(c.createdAt)}</td>
+                <td className="whitespace-nowrap">{datetime(c.createdAt)}{c.scheduledFor && <p className="text-xs text-stone">calls from {datetime(c.scheduledFor)}</p>}</td>
                 <td><p className="font-medium">{c.name}</p><Badge tone={c.status === "RUNNING" ? "warn" : c.status === "DONE" ? "good" : "neutral"}>{c.status === "RUNNING" ? "Running" : c.status === "DONE" ? "Done" : "Stopped"}</Badge></td>
                 <td className="max-w-56 text-xs text-stone">{c.audience}</td>
                 <td className="min-w-32"><p className="mb-1 text-xs">{s.done} of {c.total} calls</p><Progress value={c.total ? (s.done / c.total) * 100 : 0} /></td>

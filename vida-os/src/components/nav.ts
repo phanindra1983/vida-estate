@@ -14,6 +14,7 @@ export const NAV: NavGroup[] = [
   ] },
   { label: "Sales", items: [
     { href: "/sales/leads", label: "Leads", roles: SALES_ROLES },
+    { href: "/sales/qualified", label: "Qualified leads", roles: SALES_ROLES },
     { href: "/sales/pipeline", label: "Pipeline", roles: SALES_ROLES },
     { href: "/sales/calls", label: "AI call centre", roles: SALES_ROLES },
     { href: "/sales/accounts", label: "Corporate accounts", roles: SALES_ROLES },

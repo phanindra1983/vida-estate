@@ -9,6 +9,10 @@ import { PageHeader, Card, Badge, Status, Button, Field, LinkButton } from "@/co
 import { logActivity, scheduleVisit, changeStage, reassignLead, blockUnit } from "../../actions";
 import { Flash, one, waLink, type SP } from "../../_ui";
 import { callLeadWithAi } from "../../calls/actions";
+import { markQualified, unqualify } from "../../crm-actions";
+import { explainScore } from "@/lib/lead-score";
+import { Temp } from "../../_crm";
+import { HOME_TYPES, PURPOSES, TIMELINES } from "@/lib/constants";
 import { bolnaConfigured, getConfig, STATUS_LABEL } from "@/lib/bolna";
 
 export const dynamic = "force-dynamic";
@@ -41,8 +45,12 @@ export default async function LeadPage({ params, searchParams }: { params: Promi
     getConfig(),
   ]);
   const aiReady = bolnaConfigured() && !!aiCfg.agentId;
+
   const available = units.filter((x) => effectiveStatus(x) === "AVAILABLE" && (!lead.preferredType || x.type === lead.preferredType || sp.allTypes));
   const userName = new Map(users.map((x) => [x.id, x.name]));
+  const scored = await explainScore(lead.id);
+  const qualifiedBy = lead.qualifiedAt ? (lead.qualifiedById ? userName.get(lead.qualifiedById) ?? "staff" : "the AI caller") : null;
+  const closed = ["LOST", "BOOKED", "AGREEMENT_SIGNED"].includes(lead.stage);
   const wait = waitingMinutes(lead);
   const nextVisit = lead.activities.find((a) => a.type === "SITE_VISIT" && a.scheduledFor && a.scheduledFor.getTime() > Date.now());
   const path = `/sales/leads/${lead.id}`;
@@ -67,7 +75,7 @@ export default async function LeadPage({ params, searchParams }: { params: Promi
               <dt className="text-stone">Mobile</dt><dd>{lead.phone}</dd>
               <dt className="text-stone">Email</dt><dd>{lead.email ?? "–"}</dd>
               <dt className="text-stone">Project</dt><dd>{lead.project?.name ?? "–"}</dd>
-              <dt className="text-stone">Looking for</dt><dd>{lead.preferredType ?? "–"}{lead.budget ? ` · ${lead.budget}` : ""}</dd>
+              <dt className="text-stone">Looking for</dt><dd>{[lead.preferredType, lead.budget, lead.purpose && PURPOSES[lead.purpose], lead.timeline && TIMELINES[lead.timeline]].filter(Boolean).join(" · ") || "–"}</dd>
               <dt className="text-stone">Stage</dt><dd><Status value={lead.stage} />{lead.lostReason && <span className="ml-2 text-xs text-stone">{lead.lostReason}</span>}</dd>
               <dt className="text-stone">Owner</dt><dd>{owner?.name ?? <Badge tone="warn">Unassigned</Badge>}</dd>
               {lead.channelPartner && (<><dt className="text-stone">Partner</dt><dd>{lead.channelPartner.name}{lead.channelPartner.firm ? ` · ${lead.channelPartner.firm}` : ""} ({lead.channelPartner.commissionPct}%)</dd></>)}
@@ -79,10 +87,60 @@ export default async function LeadPage({ params, searchParams }: { params: Promi
               {lead.duplicateCount > 0 && (<><dt className="text-stone">Repeat</dt><dd>Enquired {lead.duplicateCount + 1} times</dd></>)}
             </dl>
             <div className="mt-5 flex flex-wrap gap-2">
-              <a href={`tel:+91${lead.phone}`} className="inline-flex min-h-11 items-center rounded-lg bg-ink px-4 text-sm font-medium text-white">Call</a>
+              <a href={`tel:+91${lead.phone}`} className="inline-flex min-h-11 items-center rounded-lg bg-ink px-4 text-sm font-medium text-white">📞 Call</a>
               <a href={waLink(lead.phone, introText)} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center rounded-lg border border-line bg-white px-4 text-sm font-medium">WhatsApp</a>
               {visitText && <a href={waLink(lead.phone, visitText)} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center rounded-lg border border-line bg-white px-4 text-sm font-medium">Send visit confirmation</a>}
             </div>
+          </Card>
+
+          <Card title={lead.qualifiedAt ? "⭐ Qualified" : "Qualify this lead"} action={<Temp score={scored?.score ?? lead.score} />}>
+            {lead.qualifiedAt && <p className="mb-3 text-sm">Qualified {datetime(lead.qualifiedAt)} by {qualifiedBy}.</p>}
+            {!closed && (
+              <form action={markQualified} className="grid gap-3">
+                <input type="hidden" name="leadId" value={lead.id} />
+                <input type="hidden" name="back" value={path} />
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Field label="Home size">
+                    <select className="input" name="preferredType" defaultValue={lead.preferredType ?? ""} required>
+                      <option value="" disabled>Pick one</option>
+                      {[...new Set([...HOME_TYPES, ...(lead.preferredType ? [lead.preferredType] : [])])].map((t) => <option key={t}>{t}</option>)}
+                    </select>
+                  </Field>
+                  <Field label="Budget"><input className="input" name="budget" defaultValue={lead.budget ?? ""} required placeholder="₹1.5–1.8 Cr" /></Field>
+                  <Field label="Purpose">
+                    <select className="input" name="purpose" defaultValue={lead.purpose ?? ""} required>
+                      <option value="" disabled>Pick one</option>
+                      {Object.entries(PURPOSES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                    </select>
+                  </Field>
+                  <Field label="Buying">
+                    <select className="input" name="timeline" defaultValue={lead.timeline ?? ""} required>
+                      <option value="" disabled>Pick one</option>
+                      {Object.entries(TIMELINES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                    </select>
+                  </Field>
+                </div>
+                <Field label="Note (optional)"><input className="input" name="note" placeholder="Genuine buyer, visiting Sunday with family" /></Field>
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button variant={lead.qualifiedAt ? "secondary" : "primary"}>{lead.qualifiedAt ? "Update details" : "⭐ Mark qualified"}</Button>
+                </div>
+              </form>
+            )}
+            {lead.qualifiedAt && isManager && !closed && (
+              <form action={unqualify} className="mt-2">
+                <input type="hidden" name="leadId" value={lead.id} />
+                <input type="hidden" name="back" value={path} />
+                <button className="text-xs text-stone underline underline-offset-4">Not qualified after all</button>
+              </form>
+            )}
+            {scored && (
+              <details className="mt-4 text-sm">
+                <summary className="cursor-pointer text-xs text-stone">Why the score is {scored.score}</summary>
+                <ul className="mt-2 grid gap-1 text-xs">
+                  {scored.why.map(([k, n]) => <li key={k} className="flex justify-between"><span>{k}</span><span className={n < 0 ? "text-bad" : ""}>{n > 0 ? `+${n}` : n}</span></li>)}
+                </ul>
+              </details>
+            )}
           </Card>
 
           <Card title="Move stage">

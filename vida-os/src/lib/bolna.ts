@@ -3,6 +3,8 @@ import { db } from "./db";
 import { send, esc, notifyRoles } from "./telegram";
 import { publicUrl } from "./notify";
 import { LEAD_SOURCES } from "./constants";
+import { refreshScore } from "./lead-score";
+import { qualifyLead, purposeFrom, timelineFrom } from "./qualify";
 
 /**
  * AI caller (Bolna, bolna.ai): calls buyers, asks a few qualifying questions, and offers a
@@ -360,10 +362,10 @@ export async function autoCallNewLead(leadId: string) {
 export const callableLeadWhere = { consentAt: { not: null }, doNotCallAt: null, stage: { notIn: ["LOST", "BOOKED", "AGREEMENT_SIGNED"] } };
 
 /** Place a campaign's calls, spaced out so Bolna's queue isn't flooded. Returns how many were placed. */
-export async function launchCampaign(campaignId: string, leadIds: string[], userId: string) {
+export async function launchCampaign(campaignId: string, leadIds: string[], userId: string, startAt?: Date) {
   const SPACING_S = 30;
   let placed = 0, i = 0;
-  const start = Date.now() + 15_000;
+  const start = Math.max(Date.now() + 15_000, startAt?.getTime() ?? 0);
   const queue = [...leadIds];
   const worker = async () => {
     for (let id = queue.shift(); id; id = queue.shift()) {
@@ -466,6 +468,13 @@ async function afterCall(callId: string, o: Record<string, string>) {
   if (!c.lead.preferredType && o["Home size"]) fill.preferredType = o["Home size"].slice(0, 40);
   if (c.interest === "DO_NOT_CALL") fill.doNotCallAt = new Date();
   if (Object.keys(fill).length) await db.lead.update({ where: { id: c.lead.id }, data: fill });
+  // An interested buyer is a qualified lead: hand over to sales straight away.
+  if (c.interest === "INTERESTED" && !c.lead.qualifiedAt) {
+    await qualifyLead(c.lead.id, null, { budget: o.Budget, preferredType: o["Home size"], purpose: purposeFrom(o.Purpose), timeline: timelineFrom(o.Timeline) }).catch(() => {});
+  } else {
+    if (!c.lead.purpose && purposeFrom(o.Purpose)) await db.lead.update({ where: { id: c.lead.id }, data: { purpose: purposeFrom(o.Purpose) } });
+    await refreshScore(c.lead.id);
+  }
 
   // Whoever asked for the call (e.g. from Telegram /lead) hears the result either way; campaigns don't spam.
   const starter = c.startedById && c.trigger !== "CAMPAIGN" ? await db.user.findUnique({ where: { id: c.startedById } }) : null;

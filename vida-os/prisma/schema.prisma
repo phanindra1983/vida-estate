@@ -255,6 +255,11 @@ model Lead {
   nextFollowUp     DateTime?
   duplicateCount   Int             @default(0)
   doNotCallAt      DateTime? // buyer asked not to be called again; the AI caller skips them
+  score            Int             @default(0) // 0-100, see lib/lead-score.ts (hot >= 60, warm >= 30)
+  qualifiedAt      DateTime? // pre-sales handoff: budget, size, purpose and timeline known and the buyer is genuine
+  qualifiedById    String? // null with qualifiedAt set = qualified by the AI caller
+  purpose          String? // LIVE | INVEST
+  timeline         String? // NOW | 3M | 6M | 12M | LATER
   project          Project?        @relation(fields: [projectId], references: [id])
   channelPartner   ChannelPartner? @relation(fields: [channelPartnerId], references: [id])
   activities       Activity[]
@@ -262,6 +267,8 @@ model Lead {
   aiCalls          AiCall[]
 
   @@index([phone])
+  @@index([qualifiedAt])
+  @@index([score])
 }
 
 /// A call placed by the AI caller (Bolna). Results arrive by webhook and are re-read from Bolna.
@@ -303,6 +310,7 @@ model AiCampaign {
   audience    String // what was chosen, in words, e.g. "Vida Aurum · New, Contacted · no activity 7+ days"
   status      String   @default("RUNNING") // RUNNING | STOPPED | DONE
   total       Int      @default(0)
+  scheduledFor DateTime? // first call time, when the campaign was scheduled for later
   createdById String
   createdAt   DateTime @default(now())
   calls       AiCall[]

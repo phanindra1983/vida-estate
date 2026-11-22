@@ -162,11 +162,14 @@ export async function startCampaign(fd: FormData) {
   }
 
   const ids = [...new Set(leadIds)];
-  const campaign = await db.aiCampaign.create({ data: { name, audience, total: ids.length, createdById: u.id } });
-  const placed = await launchCampaign(campaign.id, ids, u.id);
+  const sa = s(fd, "startAt");
+  const startAt = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(sa) ? new Date(`${sa}:00+05:30`) : null;
+  if (startAt && startAt.getTime() < Date.now() - 60_000) go(path, "error", "The start time is in the past.");
+  const campaign = await db.aiCampaign.create({ data: { name, audience, total: ids.length, createdById: u.id, scheduledFor: startAt } });
+  const placed = await launchCampaign(campaign.id, ids, u.id, startAt ?? undefined);
   await audit(u, "CREATE", "AiCampaign", campaign.id, `Started AI call campaign "${name}" to ${placed} buyers (${audience})`);
   revalidatePath(path);
-  go(path, "ok", `Campaign started: ${placed} calls queued, about 2 a minute, only between 9 am and 9 pm.`);
+  go(path, "ok", `Campaign ${startAt ? `scheduled from ${startAt.toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}` : "started"}: ${placed} calls queued, about 2 a minute, only between 9 am and 9 pm.`);
 }
 
 /** Managers: stop a running campaign (cancels every call still waiting in Bolna's queue). */

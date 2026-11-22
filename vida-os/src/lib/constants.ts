@@ -64,6 +64,7 @@ export const LEAD_SOURCES: Record<string, string> = {
 export const LEAD_STAGES: { key: string; label: string }[] = [
   { key: "NEW", label: "New" },
   { key: "CONTACTED", label: "Contacted" },
+  { key: "QUALIFIED", label: "Qualified" },
   { key: "VISIT_SCHEDULED", label: "Site visit scheduled" },
   { key: "VISIT_DONE", label: "Site visit done" },
   { key: "NEGOTIATION", label: "Negotiation" },
@@ -72,6 +73,10 @@ export const LEAD_STAGES: { key: string; label: string }[] = [
   { key: "AGREEMENT_SIGNED", label: "Agreement signed" },
   { key: "LOST", label: "Lost" },
 ];
+
+export const PURPOSES: Record<string, string> = { LIVE: "To live in", INVEST: "Investment" };
+export const TIMELINES: Record<string, string> = { NOW: "Ready now", "3M": "Within 3 months", "6M": "Within 6 months", "12M": "Within a year", LATER: "Later / exploring" };
+export const HOME_TYPES = ["2BHK", "3BHK", "4BHK"];
 
 export const APPROVAL_ACTIONS: Record<string, string> = {
   PURCHASE_ORDER: "Purchase order",

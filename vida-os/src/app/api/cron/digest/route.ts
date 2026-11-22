@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { sendDigest } from "@/lib/digest";
+import { refreshAllScores } from "@/lib/lead-score";
 
 export const maxDuration = 60;
 
@@ -13,5 +14,7 @@ export async function GET(req: NextRequest) {
   const vercelCron = process.env.CRON_SECRET && req.headers.get("authorization") === `Bearer ${process.env.CRON_SECRET}`;
   if (!vercelCron && (!key || req.nextUrl.searchParams.get("key") !== key)) return NextResponse.json({ error: "Not allowed" }, { status: 403 });
   const kind = req.nextUrl.searchParams.get("kind") === "evening" ? "evening" : "morning";
-  return NextResponse.json({ ok: true, kind, ...(await sendDigest(kind)) });
+  // Each morning, quiet leads cool down before the team sees the lists.
+  const scored = kind === "morning" ? await refreshAllScores().catch(() => 0) : 0;
+  return NextResponse.json({ ok: true, kind, scored, ...(await sendDigest(kind)) });
 }

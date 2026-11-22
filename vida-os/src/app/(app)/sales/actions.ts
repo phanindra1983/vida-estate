@@ -10,6 +10,7 @@ import { raiseBookingDemands, refreshDemand } from "@/lib/collections";
 import { intakeLead, releaseIfExpired, effectiveStatus } from "@/lib/sales";
 import { BLOCK_HOURS, LEAD_STAGES, SALES_INCENTIVE_PCT, SALES_MANAGERS, SALES_ROLES, COLLECTION_ROLES } from "@/lib/constants";
 import { docNo, normPhone } from "@/lib/format";
+import { refreshScore } from "@/lib/lead-score";
 
 const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const n = (f: FormData, k: string) => Number(String(f.get(k) ?? "").replace(/[^\d.]/g, "")) || 0;
@@ -148,6 +149,7 @@ export async function logActivity(f: FormData) {
     await tx.lead.update({ where: { id }, data });
     await audit(u, "UPDATE", "Lead", id, `Logged ${type.toLowerCase()} for ${lead.name}${note ? `: ${note}` : ""}`, undefined, tx);
   });
+  await refreshScore(id);
   revalidatePath("/sales");
   done(path, "Saved");
 }
@@ -165,10 +167,11 @@ export async function scheduleVisit(f: FormData) {
     await tx.activity.create({ data: { leadId: id, userId: u.id, type: "SITE_VISIT", note: s(f, "note") || "Site visit scheduled", scheduledFor: at } });
     await tx.lead.update({
       where: { id },
-      data: { stage: ["NEW", "CONTACTED"].includes(lead.stage) ? "VISIT_SCHEDULED" : lead.stage, nextFollowUp: at, lastActivityAt: new Date(), firstCallAt: lead.firstCallAt ?? new Date() },
+      data: { stage: ["NEW", "CONTACTED", "QUALIFIED"].includes(lead.stage) ? "VISIT_SCHEDULED" : lead.stage, nextFollowUp: at, lastActivityAt: new Date(), firstCallAt: lead.firstCallAt ?? new Date() },
     });
     await audit(u, "UPDATE", "Lead", id, `Site visit scheduled for ${lead.name}`, { after: { scheduledFor: at } }, tx);
   });
+  await refreshScore(id);
   revalidatePath("/sales");
   done(path, "Site visit scheduled. Send the WhatsApp confirmation below.");
 }
@@ -184,11 +187,13 @@ export async function changeStage(f: FormData) {
   if (["BOOKED", "UNIT_BLOCKED"].includes(stage)) fail(path, "Block or book a unit from the inventory to move to this stage");
   const lostReason = s(f, "lostReason");
   if (stage === "LOST" && !lostReason) fail(path, "Give a reason before marking the lead lost");
+  if (stage === "QUALIFIED" && !lead.qualifiedAt) fail(path, "Use “Mark qualified” on the lead, so budget, size and timeline are recorded");
   await db.$transaction(async (tx) => {
     await tx.lead.update({ where: { id }, data: { stage, lostReason: stage === "LOST" ? lostReason : null, lastActivityAt: new Date() } });
     await tx.activity.create({ data: { leadId: id, userId: u.id, type: "STAGE", note: `Moved to ${LEAD_STAGES.find((x) => x.key === stage)?.label}${stage === "LOST" ? ` (${lostReason})` : ""}` } });
     await audit(u, "UPDATE", "Lead", id, `Stage of ${lead.name} changed`, { before: { stage: lead.stage }, after: { stage, lostReason: lostReason || undefined } }, tx);
   });
+  await refreshScore(id);
   revalidatePath("/sales");
   done(path, "Stage updated");
 }
