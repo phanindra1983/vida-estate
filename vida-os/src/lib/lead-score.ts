@@ -10,8 +10,8 @@ export const WARM = 30;
 
 export type Temp = "HOT" | "WARM" | "COLD";
 export const temperature = (score: number): Temp => (score >= HOT ? "HOT" : score >= WARM ? "WARM" : "COLD");
-export const TEMP: Record<Temp, { label: string; tone: "bad" | "warn" | "neutral"; icon: string }> = {
-  HOT: { label: "Hot", tone: "bad", icon: "🔥" },
+export const TEMP: Record<Temp, { label: string; tone: "brass" | "warn" | "neutral"; icon: string }> = {
+  HOT: { label: "Hot", tone: "brass", icon: "🔥" },
   WARM: { label: "Warm", tone: "warn", icon: "🌤" },
   COLD: { label: "Cold", tone: "neutral", icon: "❄️" },
 };

@@ -64,7 +64,7 @@ export default async function QualifiedLeadsPage({ searchParams }: { searchParam
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label="Qualified, open" value={count.all} />
         <Stat label="Visit not fixed yet" value={count.waiting} tone={count.waiting ? "warn" : "good"} sub="Call these first" />
-        <Stat label="Hot" value={count.hot} tone={count.hot ? "bad" : undefined} sub={`Score ${HOT} or more`} />
+        <Stat label="Hot" value={count.hot} sub={`Score ${HOT} or more`} />
         <Stat label="Site visit fixed" value={count.visit} tone={count.visit ? "good" : undefined} />
       </div>
 

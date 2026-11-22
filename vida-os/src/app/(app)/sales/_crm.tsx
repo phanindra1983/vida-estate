@@ -92,7 +92,7 @@ export function LeadTable({
                   <td className="px-3 py-3">
                     <Link href={`/sales/leads/${l.id}`} className="font-medium hover:underline">{l.name}</Link>
                     <div className="text-xs text-stone">{l.phone}{l.project ? ` · ${l.project.name}` : ""}{l.duplicateCount > 0 ? ` · enquired ${l.duplicateCount + 1}×` : ""}</div>
-                    {!aiOk && <div className="text-xs text-stone">{l.doNotCallAt ? "Asked not to be called" : "No consent: AI won't call"}</div>}
+                    {!aiOk && <div className="text-xs text-stone" title={l.doNotCallAt ? "Asked not to be called" : "No consent recorded, so the AI caller won't call. You can still call."}>{l.doNotCallAt ? "🚫 Asked not to be called" : "AI can't call (no consent)"}</div>}
                   </td>
                   <td className="px-3 py-3"><Temp score={l.score} /></td>
                   <td className="px-3 py-3 text-xs">{wants || <span className="text-stone">–</span>}</td>
@@ -107,7 +107,11 @@ export function LeadTable({
                   </td>
                   <td className="px-3 py-3 text-xs">{l.ownerId ? userNames.get(l.ownerId) ?? "–" : <Badge tone="warn">Unassigned</Badge>}</td>
                   <td className="px-3 py-3 text-xs text-stone">
-                    {l.nextFollowUp ? <span className={l.nextFollowUp.getTime() < Date.now() ? "text-bad" : ""}>Follow up {ago(l.nextFollowUp).replace(" ago", l.nextFollowUp.getTime() > Date.now() ? "" : " overdue")}</span> : l.lastActivityAt ? `Last touch ${ago(l.lastActivityAt)}` : `New ${ago(l.createdAt)}`}
+                    {l.nextFollowUp
+                      ? l.nextFollowUp.getTime() < Date.now()
+                        ? <span className="text-bad">Follow-up {ago(l.nextFollowUp).replace(" ago", "")} overdue</span>
+                        : <span>Follow up {l.nextFollowUp.toLocaleString("en-IN", { timeZone: "Asia/Kolkata", weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}</span>
+                      : l.lastActivityAt ? `Last touch ${ago(l.lastActivityAt)}` : `New ${ago(l.createdAt)}`}
                   </td>
                   <td className="px-3 py-3"><PhoneLink phone={l.phone} /></td>
                 </tr>
