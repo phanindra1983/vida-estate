@@ -225,6 +225,11 @@ async function afterCall(callId: string) {
     ? `AI call done (${Math.round((c.durationSec ?? 0) / 60 * 10) / 10} min).${c.summary ? `\n${c.summary}` : ""}`
     : `AI call: ${STATUS_LABEL[c.status] ?? c.status}.`;
   await db.activity.create({ data: { leadId: c.lead.id, type: "SYSTEM", note: what.slice(0, 2000) } });
+  // Whoever asked for the call (e.g. from Telegram /lead) hears the result either way.
+  const starter = c.startedById ? await db.user.findUnique({ where: { id: c.startedById } }) : null;
+  if (starter?.telegramChatId && starter.id !== c.lead.ownerId) {
+    await send(starter.telegramChatId, `🤖 <b>${esc(c.lead.name)}</b>: ${esc(what.slice(0, 700))}\n${publicUrl(`/sales/leads/${c.lead.id}`)}`).catch(() => {});
+  }
   if (!talked) return;
   const text = `🤖 <b>AI call done</b> · ${esc(c.lead.name)} · ${c.lead.phone}${c.lead.project ? `\n${esc(c.lead.project.name)}` : ""}\n${esc((c.summary ?? "Open the lead to read the conversation.").slice(0, 600))}\nPlease call them now.\n${publicUrl(`/sales/leads/${c.lead.id}`)}`;
   try {

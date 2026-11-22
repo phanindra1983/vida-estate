@@ -6,6 +6,9 @@ import { ALL_PROJECT_ROLES, APPROVAL_ACTIONS, ROLE_LABEL } from "./constants";
 import { docNo, inr, num, date, time, istDay } from "./format";
 import { speechConfigured, speechToEnglish, languageName, wordsToDigits, MAX_VOICE_SECONDS } from "./speech";
 import { send, tg, esc, downloadFile, notifyRoles, askLocation, sendClear, type Button } from "./telegram";
+import { intakeLead } from "./sales";
+import { bolnaConfigured, getConfig, startCall } from "./bolna";
+import { SALES_ROLES } from "./constants";
 
 /**
  * The site-team bot. Telegram sends every message here (via /api/telegram).
@@ -30,7 +33,8 @@ type Attend = { flow: "attend"; dir: "in" | "out"; step: "project" | "location";
 type SitePin = { flow: "site"; step: "project" | "location"; projectId?: string };
 type Issue = { flow: "issue"; kind: "SNAG" | "SAFETY"; step: "project" | "text" | "severity" | "photo"; projectId?: string; description?: string; severity?: string };
 type Fix = { flow: "fix"; issueId: string };
-type State = Report | Material | Attend | SitePin | Issue | Fix | null;
+type NewLead = { flow: "lead"; step: "details" | "project" | "consent"; name?: string; phone?: string; projectId?: string | null };
+type State = Report | Material | Attend | SitePin | Issue | Fix | NewLead | null;
 
 type BotUser = { id: string; name: string; role: string; telegramState: string | null; projectIds: string[] | "ALL" };
 
@@ -52,6 +56,7 @@ const HELP = [
   "/safety: report a safety issue",
   "/issues: open snags and safety issues",
   "/material: ask for material",
+  "/lead: add a buyer and let the AI call them (sales)",
   "/approvals: what is waiting for you",
   "",
   "🎙 Where I ask you to type, you can send a voice note instead, in Telugu, Hindi or English (up to 30 seconds).",
@@ -86,6 +91,7 @@ export async function handleUpdate(u: TgUpdate) {
   if (text === "/report") return startReport(chatId, user);
   if (text === "/material") return startMaterial(chatId, user);
   if (text === "/approvals") return listApprovals(chatId, user);
+  if (text === "/lead") return startLead(chatId, user);
   if (text === "/done") return finishReport(chatId, user);
   if (text === "/in") return startAttend(chatId, user, "in");
   if (text === "/out") return startAttend(chatId, user, "out");
@@ -112,6 +118,7 @@ export async function handleUpdate(u: TgUpdate) {
   if (state.flow === "material") return materialText(chatId, user, state, text);
   if (state.flow === "issue") return issueText(chatId, user, state, text);
   if (state.flow === "fix") return fixText(chatId, user, state, text);
+  if (state.flow === "lead") return leadText(chatId, user, state, text);
   return send(chatId, "Please tap the <b>Share my location</b> button below, or send /cancel.");
 }
 
@@ -426,6 +433,20 @@ async function onButton(q: TgCallback) {
     await setState(user.id, { ...s, step: "text", projectId: id });
     return close(issuePrompt(s.kind));
   }
+  if (kind === "lp") {
+    if (s?.flow !== "lead" || s.step !== "project") return close("That question has expired. Send /lead to start again.");
+    if (id !== "none" && !(user.projectIds === "ALL" || user.projectIds.includes(id))) return close("You do not have access to that project.");
+    await setState(user.id, { ...s, step: "consent", projectId: id === "none" ? null : id });
+    await answer();
+    if (q.message) await tg("editMessageReplyMarkup", { chat_id: chatId, message_id: q.message.message_id, reply_markup: { inline_keyboard: [] } }).catch(() => {});
+    return send(chatId, CONSENT_Q, consentButtons(await aiCallerReady()));
+  }
+  if (kind === "lc") {
+    if (s?.flow !== "lead" || s.step !== "consent") return close("That question has expired. Send /lead to start again.");
+    await answer();
+    if (q.message) await tg("editMessageReplyMarkup", { chat_id: chatId, message_id: q.message.message_id, reply_markup: { inline_keyboard: [] } }).catch(() => {});
+    return saveLead(chatId, user, s, id as "call" | "save" | "noconsent");
+  }
   if (kind === "sv") {
     if (s?.flow !== "issue" || s.step !== "severity" || !SEVERITIES[id]) return close("That question has expired. Start again with /snag or /safety.");
     await setState(user.id, { ...s, step: "photo", severity: id });
@@ -667,7 +688,7 @@ async function reviewIssue(user: BotUser, id: string, closeIt: boolean): Promise
 
 /** Turn a voice note into English text for the step in progress. Returns null when it has already replied. */
 async function hear(chatId: string, s: State, v: { file_id: string; duration: number; mime_type?: string }): Promise<string | null> {
-  const wantsText = !!s && ((s.flow === "report" && ["work", "labour", "progress"].includes(s.step)) || (s.flow === "material" && ["item", "qty", "date"].includes(s.step)) || (s.flow === "issue" && s.step === "text"));
+  const wantsText = !!s && ((s.flow === "report" && ["work", "labour", "progress"].includes(s.step)) || (s.flow === "material" && ["item", "qty", "date"].includes(s.step)) || (s.flow === "issue" && s.step === "text") || (s.flow === "lead" && s.step === "details"));
   if (!wantsText) {
     await send(chatId, "Voice notes work when I ask you to describe something. Start with /report, /snag, /safety or /material, then speak your answer.");
     return null;
@@ -690,10 +711,90 @@ async function hear(chatId: string, s: State, v: { file_id: string; duration: nu
     }
     const lang = languageName(language);
     await send(chatId, `🎙 I heard${lang && lang !== "English" ? ` (${lang})` : ""}: <i>${esc(text)}</i>`);
+    if (s.flow === "lead") return spokenDigits(text);
     const wantsNumber = s.flow === "report" ? s.step !== "work" : s.flow === "material" ? s.step !== "item" : false;
     return wantsNumber ? wordsToDigits(text) : text;
   } catch (e) {
     await send(chatId, `Sorry, I could not understand that voice note (${esc((e as Error).message)}). Please try again, or type it.`);
     return null;
+  }
+}
+
+// ───────────── /lead: add a buyer, and let the AI caller ring them ─────────────
+
+const DIGIT_WORDS: Record<string, string> = { zero: "0", oh: "0", one: "1", two: "2", three: "3", four: "4", five: "5", six: "6", seven: "7", eight: "8", nine: "9" };
+
+/** "Ravi nine eight double four ..." → "Ravi 9844...": phone numbers are read digit by digit. */
+function spokenDigits(t: string) {
+  return t
+    .replace(/\b(double|triple)\s+(zero|oh|one|two|three|four|five|six|seven|eight|nine|\d)\b/gi, (_, n: string, d: string) => (DIGIT_WORDS[d.toLowerCase()] ?? d).repeat(n.toLowerCase() === "double" ? 2 : 3))
+    .replace(/\b(zero|oh|one|two|three|four|five|six|seven|eight|nine)\b/gi, (w) => DIGIT_WORDS[w.toLowerCase()])
+    .replace(/(\d)[\s-]+(?=\d)/g, "$1");
+}
+
+/** Pull a 10-digit Indian mobile out of free text; the rest is the name. */
+function nameAndPhone(t: string) {
+  const m = t.match(/(?:\+?91[\s-]*)?([6-9]\d{9})\b/);
+  if (!m) return null;
+  const name = t.replace(m[0], " ").replace(/[,;:|-]+/g, " ").replace(/\b(name|is|mobile|number|phone|and)\b/gi, " ").replace(/\s+/g, " ").trim();
+  return { phone: m[1], name: name.slice(0, 120) };
+}
+
+async function startLead(chatId: string, user: BotUser) {
+  if (!SALES_ROLES.includes(user.role)) return send(chatId, "Adding buyers is for the sales team.");
+  await setState(user.id, { flow: "lead", step: "details" });
+  return send(chatId, "<b>New buyer</b>\nSend their name and mobile number, for example:\n<i>Ravi Kumar 9876543210</i>\n\n🎙 You can also send a voice note.");
+}
+
+async function leadText(chatId: string, user: BotUser, s: NewLead, text: string) {
+  if (s.step !== "details") return send(chatId, "Please tap one of the buttons above, or send /cancel.");
+  const got = nameAndPhone(spokenDigits(text));
+  if (!got) return send(chatId, "I couldn't find a 10-digit mobile number. Please send the name and number again, for example: <i>Ravi Kumar 9876543210</i>");
+  if (got.name.length < 2) return send(chatId, `Got the number ${got.phone}. What is the buyer's name? Send the name and number together, please.`);
+  const projects = await myProjects(user);
+  if (projects.length <= 1) {
+    await setState(user.id, { flow: "lead", step: "consent", ...got, projectId: projects[0]?.id ?? null });
+    return send(chatId, `${esc(got.name)} · ${got.phone}${projects[0] ? ` · ${esc(projects[0].name)}` : ""}\n\n${CONSENT_Q}`, consentButtons(await aiCallerReady()));
+  }
+  await setState(user.id, { flow: "lead", step: "project", ...got });
+  return send(chatId, `${esc(got.name)} · ${got.phone}\nWhich project are they interested in?`, grid([...projects.map((p) => ({ text: p.name, data: `lp:${p.id}` })), { text: "Not sure", data: "lp:none" }]));
+}
+
+async function aiCallerReady() {
+  return bolnaConfigured() && !!(await getConfig()).agentId;
+}
+
+const consentButtons = (ai: boolean): Button[][] => [
+  ...(ai ? [[{ text: "✅ Yes, call now with AI", data: "lc:call" }]] : []),
+  [{ text: "Yes, just save", data: "lc:save" }],
+  [{ text: "No, they haven't agreed", data: "lc:noconsent" }],
+];
+
+const CONSENT_Q = "Did this person ask to be contacted by Vida Estates?";
+
+async function saveLead(chatId: string, user: BotUser, s: NewLead, choice: "call" | "save" | "noconsent") {
+  await setState(user.id, null);
+  if (!s.name || !s.phone) return send(chatId, "Something went missing. Send /lead to start again.");
+  const consent = choice !== "noconsent";
+  let res;
+  try {
+    res = await intakeLead({ name: s.name, phone: s.phone, projectId: s.projectId ?? null, source: "TELEGRAM", campaign: null, notes: null, consentAt: consent ? new Date() : null }, user);
+  } catch (e) {
+    return send(chatId, `Couldn't save: ${esc((e as Error).message)}`);
+  }
+  const lead = res.lead;
+  const link = `${process.env.PUBLIC_OS_URL ?? ""}/sales/leads/${lead.id}`;
+  const saved = res.duplicate ? `${esc(lead.name)} is already in Vida OS. I added a note to the existing lead.` : `Saved ${esc(lead.name)} in Vida OS.`;
+  if (choice !== "call") {
+    return send(chatId, `${saved}${consent ? "" : "\nThe AI won't call them without their agreement. A salesperson should call."}\n${link}`);
+  }
+  if (!lead.consentAt && !consent) return send(chatId, `${saved}\n${link}`);
+  if (!lead.consentAt) await db.lead.update({ where: { id: lead.id }, data: { consentAt: new Date() } });
+  try {
+    await startCall({ leadId: lead.id, trigger: "MANUAL", userId: user.id });
+    await audit({ id: user.id, name: user.name }, "CREATE", "AiCall", lead.id, `Asked the AI caller (Telegram) to call ${lead.name}`);
+    return send(chatId, `${saved}\n🤖 The AI caller is ringing ${esc(lead.name.split(" ")[0])} now (calls only go out 9 am to 9 pm). I'll send you the summary here when the call ends.\n${link}`);
+  } catch (e) {
+    return send(chatId, `${saved}\nThe AI couldn't call: ${esc((e as Error).message)}\n${link}`);
   }
 }

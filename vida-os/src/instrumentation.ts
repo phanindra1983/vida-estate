@@ -11,6 +11,7 @@ const COMMANDS = [
   { command: "safety", description: "Report a safety issue" },
   { command: "issues", description: "Open snags and safety issues" },
   { command: "material", description: "Ask for material" },
+  { command: "lead", description: "Add a buyer and let the AI call them" },
   { command: "approvals", description: "What is waiting for you" },
   { command: "summary", description: "Today's picture across your projects" },
   { command: "site", description: "Set the project's site location" },
