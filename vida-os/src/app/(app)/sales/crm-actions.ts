@@ -133,3 +133,19 @@ export async function bulkLeads(f: FormData) {
 
   go(path, "error", "Pick what to do with the ticked leads.");
 }
+
+/** ✅ Came / ❌ Didn't come from the Site visits page. */
+export async function markVisitAction(f: FormData) {
+  const u = await requireUser(SALES_ROLES);
+  const id = s(f, "leadId");
+  const path = back(f, "/sales/visits");
+  const [lead] = await visibleLeads(u, [id]);
+  if (!lead) go(path, "error", "Lead not found.");
+  const came = s(f, "came") === "1";
+  const { markVisit } = await import("@/lib/visits");
+  const r = await markVisit(id, came, u);
+  if (!r.changed) go(path, "error", `${lead.name} is no longer waiting for a visit.`);
+  await audit(u, "UPDATE", "Lead", id, came ? `Site visit done: ${lead.name}` : `No-show for site visit: ${lead.name}`);
+  revalidatePath("/sales");
+  go(path, "ok", came ? `${lead.name}: site visit done. Follow-up set for 2 days from now.` : `${lead.name}: marked no-show. Call to fix a new time; follow-up set for tomorrow.`);
+}

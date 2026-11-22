@@ -156,5 +156,7 @@ export async function sendDigest(kind: "morning" | "evening") {
       } catch {}
     }
   }
-  return { sent, reminders };
+  // Site visits: reminders the evening before and the morning of, no-show checks, revisit nudges.
+  const visits = await (await import("./visits")).runVisitReminders(kind).catch((e) => ({ error: (e as Error).message }));
+  return { sent, reminders, visits };
 }

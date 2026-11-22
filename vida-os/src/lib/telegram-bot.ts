@@ -433,6 +433,18 @@ async function onButton(q: TgCallback) {
     await setState(user.id, { ...s, step: "text", projectId: id });
     return close(issuePrompt(s.kind));
   }
+  if (kind === "vd" || kind === "vn") {
+    if (!SALES_ROLES.includes(user.role)) return close("Site visits are marked by the sales team.");
+    const lead = await db.lead.findUnique({ where: { id }, select: { ownerId: true, projectId: true, name: true } });
+    if (!lead || (user.role === "SALES_EXEC" ? lead.ownerId !== user.id : !(user.projectIds === "ALL" || (lead.projectId && user.projectIds.includes(lead.projectId))))) return close("You can't update that buyer.");
+    const { markVisit } = await import("./visits");
+    const r = await markVisit(id, kind === "vd", { id: user.id, name: user.name });
+    await audit({ id: user.id, name: user.name }, "UPDATE", "Lead", id, kind === "vd" ? `Site visit done: ${lead.name}` : `No-show for site visit: ${lead.name}`);
+    if (!r.changed) return close(`${esc(lead.name)} is no longer waiting for a visit, so nothing changed.`);
+    return close(kind === "vd"
+      ? `✅ Marked: ${esc(lead.name)} came for the site visit. A follow-up is set for 2 days from now.`
+      : `Marked as a no-show. Please call ${esc(lead.name)} to fix a new time. A follow-up is set for tomorrow noon.`);
+  }
   if (kind === "lp") {
     if (s?.flow !== "lead" || s.step !== "project") return close("That question has expired. Send /lead to start again.");
     if (id !== "none" && !(user.projectIds === "ALL" || user.projectIds.includes(id))) return close("You do not have access to that project.");

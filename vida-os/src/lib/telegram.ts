@@ -8,7 +8,8 @@ import { db } from "./db";
  */
 export const botConfigured = () => !!process.env.TELEGRAM_BOT_TOKEN;
 
-export type Button = { text: string; data: string };
+/** A tap-to-answer button (`data`, handled by the bot) or a link button (`url`, opens WhatsApp, a page...). */
+export type Button = { text: string; data: string; url?: undefined } | { text: string; url: string; data?: undefined };
 
 export async function tg<T = unknown>(method: string, body: Record<string, unknown> = {}): Promise<T> {
   const token = process.env.TELEGRAM_BOT_TOKEN;
@@ -30,7 +31,7 @@ export async function send(chatId: string | number, text: string, buttons?: Butt
     text,
     parse_mode: "HTML",
     disable_web_page_preview: true,
-    ...(buttons?.length ? { reply_markup: { inline_keyboard: buttons.map((row) => row.map((b) => ({ text: b.text, callback_data: b.data }))) } } : {}),
+    ...(buttons?.length ? { reply_markup: { inline_keyboard: buttons.map((row) => row.map((b) => (b.url ? { text: b.text, url: b.url } : { text: b.text, callback_data: b.data }))) } } : {}),
   });
 }
 
