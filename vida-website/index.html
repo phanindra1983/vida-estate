@@ -500,6 +500,7 @@ body.paused *,body.paused *::before,body.paused *::after{animation-play-state:pa
         <div class="fields" style="display:grid;gap:1.1rem">
           <label>Name<input name="name" autocomplete="name" required></label>
           <label>Mobile<input name="phone" type="tel" inputmode="tel" autocomplete="tel" required pattern="[0-9+ ]{10,15}"></label>
+          <label>Email <span style="font-weight:400;color:var(--text-secondary)">(optional, for your confirmation)</span><input name="email" type="email" autocomplete="email"></label>
           <label>Project
             <select name="project"><option value="VA">Vida Aurum · Kokapet</option><option value="VL">Vida Luxora · Kukatpally</option><option value="">Not sure yet</option></select>
           </label>
@@ -723,7 +724,7 @@ body.paused *,body.paused *::before,body.paused *::after{animation-play-state:pa
     const d = new FormData(form);
     const qs = new URLSearchParams(location.search);
     const payload = {
-      name: d.get('name'), phone: d.get('phone'), project: d.get('project'), consent: true,
+      name: d.get('name'), phone: d.get('phone'), email: d.get('email') || null, project: d.get('project'), consent: true,
       budget: d.get('budget') || null, homeSize: d.get('homeSize') || null, purpose: d.get('purpose') || null, timeline: d.get('timeline') || null, day: d.get('day') || null,
       message: d.get('day') ? `Site visit requested for ${d.get('day')}` : 'Site visit requested',
       campaign: 'Website · Book a site visit', utm_source: qs.get('utm_source'), utm_campaign: qs.get('utm_campaign'),
