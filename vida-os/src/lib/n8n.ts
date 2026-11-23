@@ -20,7 +20,6 @@ export type N8nLead = {
   campaign: string | null;
   score: number;
   duplicate: boolean;
-  thankYou: string; // whether the buyer was thanked by email
   mars?: Record<string, string | null> | null; // Vida Mars concept page answers
 };
 
