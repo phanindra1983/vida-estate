@@ -18,7 +18,7 @@ export function emailMode(): "SMTP" | "RESEND" | "OFF" {
 }
 export const emailTestTo = () => process.env.MAIL_TEST_TO || null;
 
-let transport: nodemailer.Transporter | null = null;
+let transport: ReturnType<typeof nodemailer.createTransport> | null = null;
 function smtp() {
   if (!transport) {
     const port = Number(process.env.SMTP_PORT || 465);

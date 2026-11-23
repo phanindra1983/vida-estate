@@ -1,4 +1,5 @@
 import { sourceForSlug, keyMatches, parseLead, receiveLead } from "@/lib/lead-intake";
+import { publicError } from "@/lib/security";
 import { json } from "../../_shared";
 
 export const maxDuration = 30;
@@ -37,7 +38,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ source:
       const r = await receiveLead(source, parseLead(raw ?? {}), { projectCode: url.searchParams.get("project") });
       results.push({ ok: true, duplicate: r.duplicate, id: r.lead.id });
     } catch (e) {
-      results.push({ ok: false, error: (e as Error).message });
+      results.push({ ok: false, error: publicError(e) });
     }
   }
   const ok = results.filter((r) => r.ok).length;

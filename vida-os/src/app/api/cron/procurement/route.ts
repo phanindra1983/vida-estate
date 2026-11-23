@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { cronAuthorized } from "@/lib/security";
 import { runEngine } from "@/lib/procurement";
 import { checkInbox, inboxConfigured } from "@/lib/mail-inbox";
 
@@ -9,9 +10,8 @@ export const maxDuration = 60;
  * Runs one pass of the procurement engine. Refuses without the key from .env.
  */
 export async function GET(req: NextRequest) {
-  const key = process.env.CRON_KEY;
-  const vercelCron = process.env.CRON_SECRET && req.headers.get("authorization") === `Bearer ${process.env.CRON_SECRET}`;
-  if (!vercelCron && (!key || req.nextUrl.searchParams.get("key") !== key)) return NextResponse.json({ error: "Not allowed" }, { status: 403 });
+  // For Vercel cron only: Authorization: Bearer CRON_SECRET (constant-time check). The old ?key=CRON_KEY is no longer accepted.
+  if (!cronAuthorized(req.headers)) return NextResponse.json({ error: "Not allowed" }, { status: 403 });
   const mail = inboxConfigured() ? await checkInbox() : null;
   // ?only=mail checks the supplier mailbox without running the buying engine.
   if (req.nextUrl.searchParams.get("only") === "mail") return NextResponse.json({ ok: true, mail });

@@ -1,7 +1,12 @@
 import { SignJWT, jwtVerify } from "jose";
 
 export const SESSION_COOKIE = "vida_session";
-const secret = () => new TextEncoder().encode(process.env.AUTH_SECRET || "dev-only-secret-change-me");
+const secret = () => {
+  const s = process.env.AUTH_SECRET;
+  // In production a missing secret would let anyone forge a session with the public fallback.
+  if (!s && process.env.NODE_ENV === "production") throw new Error("AUTH_SECRET is not set");
+  return new TextEncoder().encode(s || "dev-only-secret-change-me");
+};
 
 export type SessionPayload = { uid: string; role: string; name: string };
 

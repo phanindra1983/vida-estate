@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { publicError } from "@/lib/security";
 import { keyMatches } from "@/lib/lead-intake";
 import { ACCOUNTS_SOURCE } from "@/lib/accounts";
 import { json } from "../../leads/_shared";
@@ -51,7 +52,7 @@ export async function POST(req: Request) {
       if (existing) { await db.corporateAccount.update({ where: { key }, data }); updated++; }
       else { await db.corporateAccount.create({ data: { key, ...data } }); created++; }
     } catch (e) {
-      errors.push(`${name}: ${(e as Error).message.slice(0, 120)}`);
+      errors.push(`${name}: ${publicError(e)}`);
     }
   }
   return json({ ok: created + updated > 0, received: list.length, created, updated, errors: errors.slice(0, 20) }, created + updated > 0 || list.length === 0 ? 200 : 400);

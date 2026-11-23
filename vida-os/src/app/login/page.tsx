@@ -6,16 +6,26 @@ import { signSession, SESSION_COOKIE } from "@/lib/session";
 import { audit } from "@/lib/audit";
 import { getUser } from "@/lib/auth";
 import { ROLE_LABEL } from "@/lib/constants";
+import { rateLimit, clientIp } from "@/lib/security";
 
 /** The public website. Set WEBSITE_URL in .env when it goes live. */
 const WEBSITE_URL = process.env.WEBSITE_URL || "http://localhost:4400";
 
 async function login(formData: FormData) {
   "use server";
-  const email = String(formData.get("email") || "").trim().toLowerCase();
-  const password = String(formData.get("password") || "");
+  const email = String(formData.get("email") || "").trim().toLowerCase().slice(0, 120);
+  const password = String(formData.get("password") || "").slice(0, 200);
+  // Brute-force guard: 10 tries per address and 5 per email in 15 minutes. Failures are also
+  // counted from the audit trail, so the limit holds across server instances.
+  const ip = clientIp(await headers());
+  const since = new Date(Date.now() - 15 * 60e3);
+  const recentFails = await db.auditLog.count({ where: { action: "LOGIN_FAILED", entityType: "User", entityId: email, at: { gte: since } } });
+  if (!rateLimit(`login-ip:${ip}`, 10, 15 * 60e3) || !rateLimit(`login-email:${email}`, 5, 15 * 60e3) || recentFails >= 5) {
+    redirect("/login?error=locked");
+  }
   const u = await db.user.findUnique({ where: { email } });
   if (!u || !u.active || !(await bcrypt.compare(password, u.passwordHash))) {
+    await audit(null, "LOGIN_FAILED", "User", email, `Failed sign-in for ${email}`);
     redirect("/login?error=1");
   }
   const token = await signSession({ uid: u.id, role: u.role, name: u.name });
@@ -57,7 +67,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <img src="/logo-dark.svg" alt="Vida Estates" className="mb-10 w-32 lg:hidden" />
           <h2 className="font-serif text-3xl">Sign in</h2>
           <p className="mt-1 text-sm text-stone">Use your Vida work email.</p>
-          {error && <p className="mt-4 rounded-lg bg-[#fbefec] px-3 py-2 text-sm text-bad">That email and password did not match.</p>}
+          {error && <p className="mt-4 rounded-lg bg-[#fbefec] px-3 py-2 text-sm text-bad">{error === "locked" ? "Too many tries. Please wait 15 minutes, or ask the MD's office to reset your password." : "That email and password did not match."}</p>}
           <form action={login} className="mt-6 grid gap-4">
             <label className="field">Email<input className="input" name="email" type="email" required autoComplete="username" /></label>
             <label className="field">Password<input className="input" name="password" type="password" required autoComplete="current-password" /></label>

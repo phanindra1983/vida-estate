@@ -20,6 +20,7 @@ export async function POST(req: NextRequest) {
     const c = await syncExecution(id);
     return NextResponse.json({ ok: true, known: !!c });
   } catch (e) {
-    return NextResponse.json({ ok: false, error: (e as Error).message.slice(0, 200) }, { status: 502 });
+    console.error("bolna webhook", e);
+    return NextResponse.json({ ok: false, error: "Could not read the call" }, { status: 502 });
   }
 }

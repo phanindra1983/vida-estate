@@ -11,6 +11,7 @@ import { intakeLead, releaseIfExpired, effectiveStatus } from "@/lib/sales";
 import { BLOCK_HOURS, LEAD_STAGES, SALES_INCENTIVE_PCT, SALES_MANAGERS, SALES_ROLES, COLLECTION_ROLES } from "@/lib/constants";
 import { docNo, normPhone } from "@/lib/format";
 import { refreshScore } from "@/lib/lead-score";
+import { receiptTargetError, bookingAccessError } from "@/lib/access";
 
 const s = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const n = (f: FormData, k: string) => Number(String(f.get(k) ?? "").replace(/[^\d.]/g, "")) || 0;
@@ -370,6 +371,12 @@ export async function recordReceipt(f: FormData) {
   if (amount <= 0) fail(path, "Enter the amount received");
   if (!["NEFT", "RTGS", "UPI", "CHEQUE"].includes(mode)) fail(path, "Pick the payment mode");
   if (!reference) fail(path, "Enter the bank reference");
+  {
+    const booking = await db.booking.findUnique({ where: { id: bookingId }, select: { id: true, unit: { select: { projectId: true } } } });
+    const demand = demandId ? await db.demand.findUnique({ where: { id: demandId }, select: { bookingId: true } }) : null;
+    const err = receiptTargetError(u, booking, demand, demandId);
+    if (err) fail(path, err);
+  }
   await db.$transaction(async (tx) => {
     const b = await tx.booking.findUniqueOrThrow({ where: { id: bookingId }, include: { unit: { include: { project: true } } } });
     const count = await tx.receipt.count({ where: { booking: { unit: { projectId: b.unit.projectId } } } });
@@ -389,8 +396,9 @@ export async function setBookingStatus(f: FormData) {
   const path = back(f, `/sales/bookings/${id}`);
   const status = s(f, "status");
   if (!["AGREEMENT_SIGNED", "REGISTERED"].includes(status)) fail(path, "Unknown status");
-  const b = await db.booking.findUnique({ where: { id } });
-  if (!b) fail(path, "Booking not found");
+  const b = await db.booking.findUnique({ where: { id }, include: { unit: { select: { projectId: true } } } });
+  const accessErr = bookingAccessError(u, b);
+  if (accessErr || !b) fail(path, accessErr ?? "Booking not found");
   await db.$transaction(async (tx) => {
     await tx.booking.update({ where: { id }, data: { status } });
     if (status === "AGREEMENT_SIGNED") await tx.lead.update({ where: { id: b.leadId }, data: { stage: "AGREEMENT_SIGNED" } });

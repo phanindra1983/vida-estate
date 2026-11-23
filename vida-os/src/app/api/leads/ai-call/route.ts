@@ -19,10 +19,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Send JSON" }, { status: 400 });
   }
   if (!bolnaConfigured()) return NextResponse.json({ called: false, reason: "AI caller not set up" });
-  const lead = await db.lead.findUnique({ where: { id: leadId }, select: { id: true, consentAt: true, doNotCallAt: true, stage: true } });
+  const lead = await db.lead.findUnique({ where: { id: leadId }, select: { id: true, consentAt: true, doNotCallAt: true, stage: true, source: true, firstCallAt: true } });
   if (!lead) return NextResponse.json({ error: "Lead not found" }, { status: 404 });
   if (!lead.consentAt) return NextResponse.json({ called: false, reason: "No consent to call" });
   if (lead.doNotCallAt) return NextResponse.json({ called: false, reason: "Asked not to be called" });
+  // Anyone can type any number into the website form, so a web lead is AI-called only after a person has spoken to them.
+  if (lead.source === "WEBSITE" && !lead.firstCallAt) return NextResponse.json({ called: false, reason: "Website lead: a salesperson calls first" });
   if (["LOST", "BOOKED", "AGREEMENT_SIGNED"].includes(lead.stage)) return NextResponse.json({ called: false, reason: `Lead is ${lead.stage}` });
   // Only calls that actually started count (a call Bolna refused, e.g. an unverified number on a trial account, may be retried).
   const recent = await db.aiCall.findFirst({ where: { leadId, createdAt: { gte: new Date(Date.now() - 864e5) }, status: { not: "FAILED_TO_START" } }, select: { id: true } });
@@ -31,6 +33,7 @@ export async function POST(req: Request) {
     const callId = await startCall({ leadId, trigger: "AUTO" });
     return NextResponse.json({ called: true, callId });
   } catch (e) {
-    return NextResponse.json({ called: false, reason: (e as Error).message.slice(0, 200) });
+    console.error("ai-call failed", e);
+    return NextResponse.json({ called: false, reason: "Call could not be started" });
   }
 }

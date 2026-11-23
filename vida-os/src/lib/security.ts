@@ -51,3 +51,11 @@ export function cronAuthorized(h: Headers) {
   const secret = process.env.CRON_SECRET;
   return !!secret && safeEqual(h.get("authorization"), `Bearer ${secret}`);
 }
+
+/** For public/partner routes: our own validation text passes through, anything internal becomes generic (and is logged). */
+export function publicError(e: unknown, fallback = "Could not save this record") {
+  const m = e instanceof Error ? e.message : String(e);
+  if (/^(Enter a valid|Name is required|Please |Consent is required)/.test(m)) return m.slice(0, 160);
+  console.error("public route error:", m);
+  return fallback;
+}

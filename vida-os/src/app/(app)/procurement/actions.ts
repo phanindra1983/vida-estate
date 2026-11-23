@@ -1,4 +1,5 @@
 "use server";
+import { rfqAccessError } from "@/lib/access";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireUser, canSeeProject } from "@/lib/auth";
@@ -8,6 +9,13 @@ import { runEngine, submitAward, remind, evaluateRfq, createRfq, comparison, cre
 import { str, numVal, fail, done } from "@/lib/cost";
 import { sendEmail, emailTestTo } from "@/lib/notify";
 import { checkInbox, inboxConfigured } from "@/lib/mail-inbox";
+
+/** The enquiry must be for one of the person's projects (role alone is not enough). */
+async function guardRfq(u: { role: string; projectIds: string[] | "ALL" }, id: string) {
+  const r = await db.rfq.findUnique({ where: { id }, select: { projectId: true } });
+  const err = rfqAccessError(u, r);
+  if (err) fail("/procurement/enquiries", err);
+}
 
 const BUYERS = ["MD", "GM_PROJECTS", "PROJECT_MANAGER", "PURCHASE"];
 const SETUP = ["MD", "GM_PROJECTS", "PROJECT_MANAGER", "PURCHASE"];
@@ -30,6 +38,7 @@ export async function sendNow(fd: FormData) {
 export async function chooseVendor(fd: FormData) {
   const u = await requireUser(BUYERS);
   const id = str(fd, "rfqId");
+  await guardRfq(u, id);
   const back = `/procurement/rfq/${id}`;
   const quoteId = str(fd, "quoteId");
   const reason = str(fd, "reason");
@@ -56,8 +65,9 @@ export async function checkMailNow(fd: FormData) {
 }
 
 export async function sendReminders(fd: FormData) {
-  await requireUser(BUYERS);
+  const u = await requireUser(BUYERS);
   const id = str(fd, "rfqId");
+  await guardRfq(u, id);
   const n = await remind(id, true);
   done(`/procurement/rfq/${id}`, `Reminder sent to ${n} vendor(s).`);
 }
@@ -65,6 +75,7 @@ export async function sendReminders(fd: FormData) {
 export async function closeQuotes(fd: FormData) {
   const u = await requireUser(BUYERS);
   const id = str(fd, "rfqId");
+  await guardRfq(u, id);
   await db.rfq.update({ where: { id }, data: { quoteDueAt: new Date(Date.now() - 1000) } });
   await audit(u, "UPDATE", "Rfq", id, "Closed quotes early");
   await evaluateRfq(id);
@@ -75,6 +86,7 @@ export async function closeQuotes(fd: FormData) {
 export async function cancelRfq(fd: FormData) {
   const u = await requireUser(BUYERS);
   const id = str(fd, "rfqId");
+  await guardRfq(u, id);
   const reason = str(fd, "reason");
   if (!reason) fail(`/procurement/rfq/${id}`, "Please give a reason for cancelling.");
   const r = await db.rfq.findUniqueOrThrow({ where: { id } });

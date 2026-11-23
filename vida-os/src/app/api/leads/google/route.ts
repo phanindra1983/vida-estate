@@ -1,4 +1,5 @@
 import { keyMatches, parseLead, receiveLead, noteArrival } from "@/lib/lead-intake";
+import { publicError } from "@/lib/security";
 import { json } from "../_shared";
 
 export const maxDuration = 30;
@@ -27,6 +28,6 @@ export async function POST(req: Request) {
     const r = await receiveLead("GOOGLE", p, { projectCode: url.searchParams.get("project") });
     return json({ ok: true, duplicate: r.duplicate });
   } catch (e) {
-    return json({ error: (e as Error).message }, 400);
+    return json({ error: publicError(e) }, 400);
   }
 }

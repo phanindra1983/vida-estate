@@ -681,7 +681,11 @@ body.paused *,body.paused *::before,body.paused *::after{animation-play-state:pa
   const current = ms => ms.findIndex(m => !m[2]);
   function drawTower(reset) {
     const ms = TOWERS[tower]; const now = current(ms);
-    dots.innerHTML = ms.map((m, i) => `<span class="dot ${m[2] ? 'done' : ''} ${i === now ? 'now' : ''}"><span>${m[0]}</span></span>`).join('');
+    // Milestone names come from Vida OS: insert them as text, never as HTML.
+    dots.replaceChildren(...ms.map((m, i) => {
+      const d = document.createElement('span'); d.className = `dot ${m[2] ? 'done' : ''} ${i === now ? 'now' : ''}`;
+      const t = document.createElement('span'); t.textContent = String(m[0]); d.appendChild(t); return d;
+    }));
     scrub.max = ms.length - 1; if (reset) scrub.value = now < 0 ? ms.length - 1 : now; show();
   }
   function show() {

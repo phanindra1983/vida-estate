@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { publicError } from "@/lib/security";
 import { keyMatches, parseLead, receiveLead } from "@/lib/lead-intake";
 import { CORS, json } from "../_shared";
 
@@ -57,7 +58,7 @@ export async function POST(req: Request) {
     const r = await receiveLead("META", parseLead(JSON.parse(raw)), { projectCode: url.searchParams.get("project") });
     return json({ ok: true, duplicate: r.duplicate });
   } catch (e) {
-    return json({ error: (e as Error).message }, 400);
+    return json({ error: publicError(e) }, 400);
   }
 }
 
