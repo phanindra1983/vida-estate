@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Scorecard } from "@/components/Scorecard";
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
@@ -70,6 +71,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: SP }) 
         <a href="#add" className="inline-flex min-h-11 items-center rounded-lg bg-ink px-4 text-sm font-medium text-white hover:bg-ink-2">Add a lead</a>
       </PageHeader>
       <SubNav active="/sales/leads" />
+      <Scorecard kpis={["LEADS", "QUALIFIED", "SITE_VISITS", "UNITS"]} />
       <Flash ok={one(sp.ok)} error={one(sp.error)} />
 
       {escalated > 0 && (

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Scorecard } from "@/components/Scorecard";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { COLLECTION_ROLES } from "@/lib/constants";
@@ -35,6 +36,7 @@ export default async function BookingsPage({ searchParams }: { searchParams: SP 
         </form>
       </PageHeader>
       <SubNav active="/sales/bookings" />
+      <Scorecard kpis={["SALES_VALUE", "UNITS", "COLLECTIONS", "DEFAULT_RATE"]} />
       <Flash ok={one(sp.ok)} error={one(sp.error)} />
       <Card pad={false}>
         <Table head={["Unit", "Buyer", "Plan", { label: "Value", num: true }, { label: "Demanded", num: true }, "Collected", "Status", "Booked"]} empty="No bookings yet.">

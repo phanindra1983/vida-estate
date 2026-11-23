@@ -7,6 +7,23 @@ import { PageHeader, Card, Table, Button, Field, Status, Badge } from "@/compone
 
 const ROLES = ["MD", "FINANCE_HEAD", "GM_PROJECTS", "PURCHASE", "SALES_HEAD", "HR"];
 
+async function setProjectDates(fd: FormData) {
+  "use server";
+  const u = await requireUser(["MD", "GM_PROJECTS"]);
+  const id = String(fd.get("projectId"));
+  const d = (k: string) => {
+    const v = String(fd.get(k) ?? "");
+    return /^\d{4}-\d{2}-\d{2}$/.test(v) ? new Date(`${v}T00:00:00+05:30`) : null;
+  };
+  const before = await db.project.findUnique({ where: { id }, select: { name: true, launchDate: true, reraCompletion: true, estCompletion: true } });
+  if (!before) return;
+  const after = { launchDate: d("launchDate"), reraCompletion: d("reraCompletion"), estCompletion: d("estCompletion") };
+  await db.project.update({ where: { id }, data: after });
+  await audit(u, "UPDATE", "Project", id, `Key dates of ${before.name} updated`, { before, after });
+  revalidatePath("/control/masters");
+  revalidatePath("/reports/review");
+}
+
 async function addVendor(fd: FormData) {
   "use server";
   const u = await requireUser(["MD", "FINANCE_HEAD", "PURCHASE", "GM_PROJECTS"]);
@@ -80,6 +97,22 @@ async function Projects() {
           </tr>
         ))}
       </Table>
+      <div className="border-t border-line p-5">
+        <h3 className="mb-1 font-medium">Key dates</h3>
+        <p className="mb-4 text-xs text-stone">Used by the Business review to track the buffer between the expected completion and the RERA possession date. MD and GM Projects can change them; every change is in the audit trail.</p>
+        <div className="grid gap-3">
+          {projects.map((p) => (
+            <form key={p.id} action={setProjectDates} className="grid items-end gap-3 sm:grid-cols-[10rem_1fr_1fr_1fr_auto]">
+              <input type="hidden" name="projectId" value={p.id} />
+              <p className="text-sm font-medium sm:pb-3">{p.name}</p>
+              <Field label="Launch"><input className="input" type="date" name="launchDate" defaultValue={p.launchDate?.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }) ?? ""} /></Field>
+              <Field label="RERA completion"><input className="input" type="date" name="reraCompletion" defaultValue={p.reraCompletion?.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }) ?? ""} /></Field>
+              <Field label="Expected completion"><input className="input" type="date" name="estCompletion" defaultValue={p.estCompletion?.toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" }) ?? ""} /></Field>
+              <Button size="sm" variant="secondary">Save</Button>
+            </form>
+          ))}
+        </div>
+      </div>
     </Card>
   );
 }

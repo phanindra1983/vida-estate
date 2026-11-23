@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Scorecard } from "@/components/Scorecard";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { COLLECTION_ROLES } from "@/lib/constants";
@@ -42,6 +43,7 @@ export default async function CollectionsPage() {
     <>
       <PageHeader eyebrow="Sales" title="Collections" />
       <SubNav active="/sales/collections" />
+      <Scorecard kpis={["COLLECTIONS", "DEFAULT_RATE", "SALES_VALUE"]} />
 
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Stat label="Demanded" value={inr(tot.demanded)} sub="All demand letters raised" />

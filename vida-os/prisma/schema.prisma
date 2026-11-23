@@ -53,6 +53,8 @@ model Project {
   description   String?
   startingPrice Int?
   launchDate    DateTime?
+  reraCompletion DateTime? // possession date registered with RERA
+  estCompletion  DateTime? // current expected completion (PM's estimate)
   published     Boolean         @default(false)
   siteLat       Float? // site pin for attendance check-ins (set from the bot with /site)
   siteLng       Float?
@@ -364,6 +366,7 @@ model Booking {
   bookedAt       DateTime    @default(now())
   bookedById     String
   status         String      @default("BOOKED") // BOOKED | AGREEMENT_SIGNED | REGISTERED | CANCELLED
+  cancelledAt    DateTime?
   unit           Unit        @relation(fields: [unitId], references: [id])
   lead           Lead        @relation(fields: [leadId], references: [id])
   plan           PaymentPlan @relation(fields: [planId], references: [id])
@@ -790,4 +793,32 @@ model RfqMessage {
   rfq         Rfq      @relation(fields: [rfqId], references: [id], onDelete: Cascade)
 
   @@index([rfqId, receivedAt])
+}
+
+/// The business plan: a monthly target per KPI, company-wide (projectId null) or per project.
+/// month 0 holds a year-level figure (e.g. the default-rate target).
+model PlanTarget {
+  id          String   @id @default(cuid())
+  year        Int
+  month       Int // 1-12, or 0 for a year-level value
+  projectId   String   @default("") // "" = whole company
+  kpi         String // SALES_VALUE | UNITS | COLLECTIONS | SITE_VISITS | QUALIFIED | LEADS | DEFAULT_RATE
+  value       Float
+  updatedById String?
+  updatedAt   DateTime @updatedAt
+
+  @@unique([year, month, projectId, kpi])
+}
+
+/// Monthly business review commentary: what worked, what did not, concerns, actions, and per-KPI comments.
+model ReviewNote {
+  id          String   @id @default(cuid())
+  year        Int
+  month       Int
+  section     String // WORKED | NOT_WORKED | CONCERNS | ACTIONS | KPI:<kpi>
+  text        String
+  updatedById String?
+  updatedAt   DateTime @updatedAt
+
+  @@unique([year, month, section])
 }

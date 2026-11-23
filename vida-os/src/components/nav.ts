@@ -45,10 +45,13 @@ export const NAV: NavGroup[] = [
     { href: "/procurement/outbox", label: "Messages sent", roles: ["MD", "GM_PROJECTS", "PURCHASE"] },
   ] },
   { label: "Reports", items: [
+    { href: "/reports/review", label: "Business review", roles: MIS },
     { href: "/reports/board-pack", label: "Board pack", roles: MIS },
     { href: "/reports/accounting", label: "Accounting export", roles: FINANCE_ROLES },
   ] },
   { label: "Control", items: [
+    { href: "/control/health", label: "Controls", roles: MIS },
+    { href: "/control/plan", label: "Business plan", roles: MIS },
     { href: "/control/audit", label: "Audit trail", roles: ["MD", "FINANCE_HEAD"] },
     { href: "/control/authority", label: "Approval limits", roles: ADMIN_ROLES },
     { href: "/control/users", label: "Users & access", roles: ADMIN_ROLES },
