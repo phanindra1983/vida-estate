@@ -24,7 +24,8 @@ export async function POST(req: Request) {
   if (!lead.consentAt) return NextResponse.json({ called: false, reason: "No consent to call" });
   if (lead.doNotCallAt) return NextResponse.json({ called: false, reason: "Asked not to be called" });
   if (["LOST", "BOOKED", "AGREEMENT_SIGNED"].includes(lead.stage)) return NextResponse.json({ called: false, reason: `Lead is ${lead.stage}` });
-  const recent = await db.aiCall.findFirst({ where: { leadId, createdAt: { gte: new Date(Date.now() - 864e5) } }, select: { id: true } });
+  // Only calls that actually started count (a call Bolna refused, e.g. an unverified number on a trial account, may be retried).
+  const recent = await db.aiCall.findFirst({ where: { leadId, createdAt: { gte: new Date(Date.now() - 864e5) }, status: { not: "FAILED_TO_START" } }, select: { id: true } });
   if (recent) return NextResponse.json({ called: false, reason: "Already AI-called in the last 24 hours" });
   try {
     const callId = await startCall({ leadId, trigger: "AUTO" });
