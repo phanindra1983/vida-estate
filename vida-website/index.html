@@ -513,7 +513,7 @@ body.paused *,body.paused *::before,body.paused *::after{animation-play-state:pa
           <label>Mobile<input name="phone" type="tel" inputmode="tel" autocomplete="tel" required pattern="[0-9+ ]{10,15}"></label>
           <label>Email <span style="font-weight:400;color:var(--text-secondary)">(optional, for your confirmation)</span><input name="email" type="email" autocomplete="email"></label>
           <label>Project
-            <select name="project"><option value="VA">Vida Aurum · Kokapet</option><option value="VL">Vida Luxora · Kukatpally</option><option value="">Not sure yet</option></select>
+            <select name="project"><option value="VA">Vida Aurum · Kokapet</option><option value="VL">Vida Luxora · Kukatpally</option><option value="MARS">Vida Mars · Concept</option><option value="">Not sure yet</option></select>
           </label>
           <label>Budget
             <select name="budget"><option value="">Prefer not to say</option><option>Under ₹1 Cr</option><option>₹1–2 Cr</option><option>₹2–3 Cr</option><option>₹3 Cr+</option></select>
@@ -528,6 +528,13 @@ body.paused *,body.paused *::before,body.paused *::after{animation-play-state:pa
             <select name="timeline"><option value="">Just exploring</option><option value="NOW">Ready now</option><option value="3M">Within 3 months</option><option value="6M">Within 6 months</option><option value="12M">Within a year</option><option value="LATER">Later</option></select>
           </label>
           <label>Preferred day<input name="day" type="date"></label>
+          <div id="marsQs" hidden style="display:grid;gap:1.1rem;padding:1rem;border:1px dashed var(--line);border-radius:6px">
+            <p class="eyebrow">Vida Mars · a few Mars questions</p>
+            <label>Do you get speed or motion sickness?<select name="speedSickness"><option value="">Choose</option><option>No</option><option>Yes</option></select></label>
+            <label>Do you enjoy the colour red?<select name="likesRed"><option value="">Choose</option><option>Yes</option><option>No</option></select></label>
+            <label>Are you married?<select name="married"><option value="">Choose</option><option>No</option><option>Yes</option></select></label>
+            <label>Annual income<select name="income"><option value="">Choose</option><option>Under ₹1 Cr</option><option>₹1–5 Cr</option><option>Above ₹5 Cr</option></select></label>
+          </div>
           <label class="consent"><input type="checkbox" name="consent" required> I agree to be contacted by Vida Estates about this enquiry.</label>
           <div><button class="btn" type="submit">Book my visit</button></div>
         </div>
@@ -729,6 +736,14 @@ body.paused *,body.paused *::before,body.paused *::after{animation-play-state:pa
 
   // ── visit form: sends the enquiry straight into Vida OS leads ──
   const form = $('#visitForm'), btn = $('button[type=submit]', form);
+  // Picking Vida Mars shows (and requires) the Mars questions.
+  const marsQs = $('#marsQs'), projSel = form.elements.project;
+  const toggleMars = () => {
+    const on = projSel.value === 'MARS';
+    marsQs.hidden = !on; marsQs.style.display = on ? 'grid' : 'none';
+    marsQs.querySelectorAll('select').forEach(el => { el.required = on; });
+  };
+  projSel.addEventListener('change', toggleMars); toggleMars();
   form.addEventListener('submit', async e => {
     e.preventDefault();
     if (!form.checkValidity()) { form.reportValidity(); return; }
@@ -738,8 +753,12 @@ body.paused *,body.paused *::before,body.paused *::after{animation-play-state:pa
       name: d.get('name'), phone: d.get('phone'), email: d.get('email') || null, project: d.get('project'), consent: true,
       budget: d.get('budget') || null, homeSize: d.get('homeSize') || null, purpose: d.get('purpose') || null, timeline: d.get('timeline') || null, day: d.get('day') || null,
       message: d.get('day') ? `Site visit requested for ${d.get('day')}` : 'Site visit requested',
-      campaign: 'Website · Book a site visit', utm_source: qs.get('utm_source'), utm_campaign: qs.get('utm_campaign'),
+      campaign: d.get('project') === 'MARS' ? 'Vida Mars · main form' : 'Website · Book a site visit', utm_source: qs.get('utm_source'), utm_campaign: qs.get('utm_campaign'),
     };
+    if (d.get('project') === 'MARS') {
+      payload.mars = { speedSickness: d.get('speedSickness'), likesRed: d.get('likesRed'), married: d.get('married'), income: d.get('income') };
+      payload.message += `\nVida Mars (concept) · Speed sickness: ${d.get('speedSickness')} · Likes red: ${d.get('likesRed')} · Married: ${d.get('married')} · Income: ${d.get('income')}`;
+    }
     btn.disabled = true; btn.textContent = 'Sending…';
     try {
       const res = await fetch(VIDA_OS_URL + '/api/leads/web', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
