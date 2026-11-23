@@ -14,6 +14,9 @@ export type IntakeInput = {
   campaign?: string | null;
   channelPartnerId?: string | null;
   preferredType?: string | null;
+  budget?: string | null;
+  purpose?: string | null; // LIVE | INVEST
+  timeline?: string | null; // NOW | 3M | 6M | 12M | LATER
   notes?: string | null;
   consentAt?: Date | null;
 };
@@ -53,6 +56,9 @@ export async function intakeLead(input: IntakeInput, actor: Actor) {
         campaign: input.campaign || null,
         channelPartnerId: input.channelPartnerId || null,
         preferredType: input.preferredType || null,
+        budget: input.budget || null,
+        purpose: input.purpose || null,
+        timeline: input.timeline || null,
         notes: input.notes || null,
         consentAt: input.consentAt ?? null,
         ownerId,

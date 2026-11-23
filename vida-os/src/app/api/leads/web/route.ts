@@ -1,6 +1,14 @@
+import { db } from "@/lib/db";
 import { intakeLead } from "@/lib/sales";
 import { announceLead, noteArrival } from "@/lib/lead-intake";
+import { refreshScore } from "@/lib/lead-score";
+import { sendLeadToN8n } from "@/lib/n8n";
+import { HOME_TYPES, PURPOSES, TIMELINES } from "@/lib/constants";
 import { CORS, json, projectIdFrom } from "../_shared";
+
+const BUDGETS = ["Under ₹1 Cr", "₹1–2 Cr", "₹2–3 Cr", "₹3 Cr+"];
+/** Only values from the website's own drop-downs are kept; anything else is ignored. */
+const pick = (v: unknown, allowed: readonly string[]) => (typeof v === "string" && allowed.includes(v) ? v : null);
 
 /** Website enquiry form. Consent (DPDP Act) is required. */
 export async function POST(req: Request) {
@@ -11,6 +19,12 @@ export async function POST(req: Request) {
     return json({ error: "Send JSON" }, 400);
   }
   if (b.consent !== true) return json({ error: "Consent is required to contact you" }, 400);
+  const answers = {
+    budget: pick(b.budget, BUDGETS),
+    preferredType: pick(b.homeSize, HOME_TYPES),
+    purpose: pick(b.purpose, Object.keys(PURPOSES)),
+    timeline: pick(b.timeline, Object.keys(TIMELINES)),
+  };
   try {
     const res = await intakeLead(
       {
@@ -22,11 +36,37 @@ export async function POST(req: Request) {
         campaign: [b.campaign, b.utm_source, b.utm_campaign].filter(Boolean).map(String).join(" · ") || null,
         notes: b.message ? String(b.message).slice(0, 1000) : null,
         consentAt: new Date(),
+        ...answers,
       },
       null,
     );
+    // A repeat enquiry fills in answers the earlier one left blank, never overwrites them.
+    if (res.duplicate) {
+      const fill = Object.fromEntries(Object.entries(answers).filter(([k, v]) => v && !res.lead[k as keyof typeof answers]));
+      if (Object.keys(fill).length) await db.lead.update({ where: { id: res.lead.id }, data: fill });
+    }
+    await refreshScore(res.lead.id);
     await noteArrival("WEBSITE");
     if (!res.duplicate) await announceLead(res.lead.id);
+
+    const lead = await db.lead.findUnique({ where: { id: res.lead.id }, include: { project: { select: { name: true } } } });
+    if (lead) {
+      await sendLeadToN8n({
+        leadId: lead.id,
+        name: lead.name,
+        phone: lead.phone,
+        email: lead.email,
+        project: lead.project?.name ?? null,
+        budget: lead.budget,
+        homeSize: lead.preferredType,
+        purpose: lead.purpose,
+        timeline: lead.timeline,
+        preferredDay: typeof b.day === "string" && /^\d{4}-\d{2}-\d{2}$/.test(b.day) ? b.day : null,
+        campaign: lead.campaign,
+        score: lead.score,
+        duplicate: res.duplicate,
+      });
+    }
     return json({ ok: true, duplicate: res.duplicate });
   } catch (e) {
     return json({ error: (e as Error).message }, 400);

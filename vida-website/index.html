@@ -503,6 +503,18 @@ body.paused *,body.paused *::before,body.paused *::after{animation-play-state:pa
           <label>Project
             <select name="project"><option value="VA">Vida Aurum · Kokapet</option><option value="VL">Vida Luxora · Kukatpally</option><option value="">Not sure yet</option></select>
           </label>
+          <label>Budget
+            <select name="budget"><option value="">Prefer not to say</option><option>Under ₹1 Cr</option><option>₹1–2 Cr</option><option>₹2–3 Cr</option><option>₹3 Cr+</option></select>
+          </label>
+          <label>Home size
+            <select name="homeSize"><option value="">Not sure yet</option><option value="2BHK">2 BHK</option><option value="3BHK">3 BHK</option><option value="4BHK">4 BHK</option></select>
+          </label>
+          <label>Buying to
+            <select name="purpose"><option value="">Prefer not to say</option><option value="LIVE">Live in</option><option value="INVEST">Invest</option></select>
+          </label>
+          <label>When do you plan to buy?
+            <select name="timeline"><option value="">Just exploring</option><option value="NOW">Ready now</option><option value="3M">Within 3 months</option><option value="6M">Within 6 months</option><option value="12M">Within a year</option><option value="LATER">Later</option></select>
+          </label>
           <label>Preferred day<input name="day" type="date"></label>
           <label class="consent"><input type="checkbox" name="consent" required> I agree to be contacted by Vida Estates about this enquiry.</label>
           <div><button class="btn" type="submit">Book my visit</button></div>
@@ -712,6 +724,7 @@ body.paused *,body.paused *::before,body.paused *::after{animation-play-state:pa
     const qs = new URLSearchParams(location.search);
     const payload = {
       name: d.get('name'), phone: d.get('phone'), project: d.get('project'), consent: true,
+      budget: d.get('budget') || null, homeSize: d.get('homeSize') || null, purpose: d.get('purpose') || null, timeline: d.get('timeline') || null, day: d.get('day') || null,
       message: d.get('day') ? `Site visit requested for ${d.get('day')}` : 'Site visit requested',
       campaign: 'Website · Book a site visit', utm_source: qs.get('utm_source'), utm_campaign: qs.get('utm_campaign'),
     };
@@ -722,7 +735,7 @@ body.paused *,body.paused *::before,body.paused *::after{animation-play-state:pa
       form.classList.add('sent');
     } catch (err) {
       // Vida OS unreachable: fall back to the visitor's email app so the enquiry is never lost.
-      const body = `Site visit request\nName: ${payload.name}\nMobile: ${payload.phone}\nProject: ${payload.project || 'Not sure yet'}\n${payload.message}\nConsent: yes`;
+      const body = `Site visit request\nName: ${payload.name}\nMobile: ${payload.phone}\nProject: ${payload.project || 'Not sure yet'}\nBudget: ${payload.budget || '-'}\nHome size: ${payload.homeSize || '-'}\nBuying to: ${payload.purpose || '-'}\nTimeline: ${payload.timeline || '-'}\n${payload.message}\nConsent: yes`;
       window.location.href = `mailto:hello@vidaestates.com?subject=${encodeURIComponent('Site visit request')}&body=${encodeURIComponent(body)}`;
       form.classList.add('sent');
     } finally { btn.disabled = false; btn.textContent = 'Book my visit'; }
