@@ -223,7 +223,7 @@ function agentBody(cfg: BolnaConfig) {
         task_type: "conversation",
         toolchain: { execution: "sequential", pipelines: [["transcriber", "llm", "synthesizer"]] },
         tools_config: {
-          llm_agent: { agent_type: "simple_llm_agent", agent_flow_type: "streaming", llm_config: { provider: "openai", model: "gpt-5.4-mini", max_tokens: 150, temperature: 1 } },
+          llm_agent: { agent_type: "simple_llm_agent", agent_flow_type: "streaming", llm_config: { provider: "openai", model: "gpt-4.1-mini", max_tokens: 300, temperature: 0.6 } },
           synthesizer: { provider: "sarvam", provider_config: { voice: voice.name, voice_id: voice.id, model: "bulbul:v3", language: s.language, speed: 0.92 }, stream: true, buffer_size: 150, audio_format: "wav" },
           transcriber: { provider: "sarvam", model: "saaras:v4", language: s.language, stream: true, endpointing: 500 },
           multilingual_config: multilingual(s, voice),
@@ -285,7 +285,9 @@ export async function createAgent() {
 }
 
 /** Bump when the script or voice setup changes: the agent on Bolna is updated before the next call. */
-const AGENT_VERSION = "2026-11-23-mars-sweet";
+// gpt-4.1-mini answers at once; the earlier reasoning model (gpt-5.4-mini, 150 tokens) sometimes spent
+// its whole allowance thinking and returned nothing, which Bolna reports as "LLM error" and hangs up.
+const AGENT_VERSION = "2026-11-23-llm-4.1-mini";
 
 /** Push the current script to the Bolna agent if it was set up by an older version. Never blocks a call. */
 async function syncAgentIfStale(cfg: BolnaConfig) {
