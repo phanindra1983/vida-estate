@@ -74,7 +74,7 @@ export const defaultWelcome = (lang: string, caller: string) =>
       ? `నమస్కారం {{customer_name}} గారు, నేను Vida Estates నుండి ${caller} మాట్లాడుతున్నాను. మీరు {{project_name}} గురించి అడిగారు. ఇప్పుడు మాట్లాడటానికి సమయం ఉందా?`
       : `Hello, am I speaking with {{customer_name}}? This is ${caller}, calling from Vida Estates about your enquiry for {{project_name}}. Is this a good time to talk?`;
 
-export const DEFAULT_SETTINGS: CallerSettings = { callerName: "Priya", language: "hi", voiceId: "priya", welcome: "", notes: "", maxMinutes: 4 };
+export const DEFAULT_SETTINGS: CallerSettings = { callerName: "Priya", language: "en", voiceId: "priya", welcome: "", notes: "", maxMinutes: 4 };
 
 export const bolnaConfigured = () => !!process.env.BOLNA_API_KEY;
 
@@ -287,14 +287,17 @@ export async function createAgent() {
 /** Bump when the script or voice setup changes: the agent on Bolna is updated before the next call. */
 // gpt-4.1-mini answers at once; the earlier reasoning model (gpt-5.4-mini, 150 tokens) sometimes spent
 // its whole allowance thinking and returned nothing, which Bolna reports as "LLM error" and hangs up.
-const AGENT_VERSION = "2026-11-23-llm-4.1-mini";
+const AGENT_VERSION = "2026-11-23-english-first";
+/** One-time settings change shipped with this version: the MD asked for calls to open in English (2026-11-23). */
+const VERSION_SETTINGS: Partial<CallerSettings> = { language: "en" };
 
 /** Push the current script to the Bolna agent if it was set up by an older version. Never blocks a call. */
 async function syncAgentIfStale(cfg: BolnaConfig) {
   if (!cfg.agentId || cfg.agentVersion === AGENT_VERSION) return;
+  const next: BolnaConfig = { ...cfg, settings: { ...settingsOf(cfg), ...VERSION_SETTINGS } };
   try {
-    await bolna(`/v2/agent/${cfg.agentId}`, { method: "PUT", body: agentBody(cfg) });
-    await saveConfig({ ...cfg, agentVersion: AGENT_VERSION, agentUpdatedAt: new Date().toISOString() });
+    await bolna(`/v2/agent/${cfg.agentId}`, { method: "PUT", body: agentBody(next) });
+    await saveConfig({ ...next, agentVersion: AGENT_VERSION, agentUpdatedAt: new Date().toISOString() });
   } catch {}
 }
 
