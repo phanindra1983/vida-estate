@@ -169,6 +169,9 @@ Your goal in under ${s.maxMinutes} minutes:
 3. Offer a site visit and agree a day and time. Our sales team will confirm it.
 4. Tell them a Vida Estates sales manager will call them shortly, thank them, and end the call.
 ${s.notes.trim() ? `\nUseful facts you may share if asked:\n${s.notes.trim()}\n` : ""}
+About this enquiry (use it in the conversation): {{project_brief}}
+If the enquiry is for Vida Mars, follow the brief above: explain the concept warmly and with a light touch, ask which plot size interests them instead of home size, and offer a virtual walkthrough with the team instead of a site visit.
+
 Rules:
 - You are an AI assistant. If asked, say so honestly.
 - Be warm, polite and brief. Short sentences. Never talk over the caller.
@@ -311,6 +314,23 @@ const e164 = (phone: string) => {
   throw new Error("Enter a valid Indian mobile number.");
 };
 
+/** What the caller says about Vida Mars, with the buyer's own answers from the website form. */
+function marsBrief(notes: string | null) {
+  const a = (k: string) => notes?.match(new RegExp(`${k}: ([^·\\n]+)`))?.[1]?.trim();
+  const said = [
+    a("Speed sickness") && `motion or speed sickness: ${a("Speed sickness")}`,
+    a("Likes red") && `enjoys the colour red: ${a("Likes red")}`,
+    a("Married") && `married: ${a("Married")}`,
+    a("Income") && `annual income: ${a("Income")}`,
+  ].filter(Boolean).join("; ");
+  return [
+    "Vida Mars Ultimate is a CONCEPT project by Vida Estates: a 100-acre gated plotted layout on the planet Mars, for people who want room to build their own home.",
+    "Three plot types: Crater View, 300 square yards, corner plots on the crater rim with the widest views; Red Valley, 500 square yards, on the main avenue near the clubhouse dome and the landing pad; Olympus Estate, 1,000 square yards, large plots at the quiet end of the layout for a villa.",
+    "Be clear and honest that it is a concept: nothing can be bought or booked yet, and there are no prices.",
+    said ? `On the website the buyer told us (${said}). Mention these naturally, for example that loving red is perfect for Mars.` : "",
+  ].filter(Boolean).join(" ");
+}
+
 /** Place one AI call. For a lead, or a test call to any number (trigger TEST). */
 export async function startCall(opts: { leadId?: string; toNumber?: string; trigger: "AUTO" | "MANUAL" | "TEST" | "CAMPAIGN"; userId?: string | null; campaignId?: string; scheduledAt?: Date }) {
   const cfg = await getConfig();
@@ -319,11 +339,13 @@ export async function startCall(opts: { leadId?: string; toNumber?: string; trig
   if (opts.leadId && !lead) throw new Error("Lead not found.");
   if (lead?.doNotCallAt) throw new Error(`${lead.name} asked not to be called again.`);
   const to = e164(opts.toNumber ?? lead!.phone);
+  const mars = !!lead?.campaign?.startsWith("Vida Mars");
   const user_data = {
     customer_name: lead?.name.split(" ")[0] ?? "there",
-    project_name: lead?.project?.name ?? "our new homes",
-    project_location: lead?.project?.location ?? "Hyderabad",
+    project_name: mars ? "Vida Mars Ultimate" : lead?.project?.name ?? "our new homes",
+    project_location: mars ? "Mars, a concept project" : lead?.project?.location ?? "Hyderabad",
     source: lead ? LEAD_SOURCES[lead.source] ?? lead.source : "our website",
+    project_brief: mars ? marsBrief(lead?.notes ?? null) : lead?.project?.description?.slice(0, 600) || "A Vida Estates project in Hyderabad.",
   };
   const row = await db.aiCall.create({
     data: { leadId: lead?.id, toNumber: to, trigger: opts.trigger, startedById: opts.userId ?? null, campaignId: opts.campaignId, projectId: lead?.projectId ?? null, status: opts.scheduledAt ? "scheduled" : "QUEUED" },
