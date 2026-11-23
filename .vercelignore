@@ -3,3 +3,4 @@
 /vida-website/node_modules
 .DS_Store
 .env*
+.umbrella-backup/
