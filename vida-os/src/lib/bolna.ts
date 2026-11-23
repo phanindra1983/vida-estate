@@ -65,7 +65,7 @@ export const VOICES: { id: string; name: string; gender: "Female" | "Male"; styl
 ];
 
 export type CallerSettings = { callerName: string; language: "en" | "hi" | "te"; voiceId: string; welcome: string; notes: string; maxMinutes: number };
-export type BolnaConfig = { agentId?: string; autoCall: boolean; webhookKey: string; agentCreatedAt?: string; agentUpdatedAt?: string; outcomesReady?: boolean; settings?: CallerSettings };
+export type BolnaConfig = { agentId?: string; agentVersion?: string; autoCall: boolean; webhookKey: string; agentCreatedAt?: string; agentUpdatedAt?: string; outcomesReady?: boolean; settings?: CallerSettings };
 
 export const defaultWelcome = (lang: string, caller: string) =>
   lang === "hi"
@@ -284,12 +284,25 @@ export async function createAgent() {
   return res.agent_id;
 }
 
+/** Bump when the script or voice setup changes: the agent on Bolna is updated before the next call. */
+const AGENT_VERSION = "2026-11-23-mars-sweet";
+
+/** Push the current script to the Bolna agent if it was set up by an older version. Never blocks a call. */
+async function syncAgentIfStale(cfg: BolnaConfig) {
+  if (!cfg.agentId || cfg.agentVersion === AGENT_VERSION) return;
+  try {
+    await bolna(`/v2/agent/${cfg.agentId}`, { method: "PUT", body: agentBody(cfg) });
+    await saveConfig({ ...cfg, agentVersion: AGENT_VERSION, agentUpdatedAt: new Date().toISOString() });
+  } catch {}
+}
+
 /** Save caller settings and push them to the agent on Bolna. */
 export async function saveCallerSettings(s: CallerSettings) {
   const cfg = { ...(await getConfig()), settings: s };
   if (cfg.agentId) {
     await bolna(`/v2/agent/${cfg.agentId}`, { method: "PUT", body: agentBody(cfg) });
     cfg.agentUpdatedAt = new Date().toISOString();
+    cfg.agentVersion = AGENT_VERSION;
   }
   await saveConfig(cfg);
   if (cfg.agentId) await ensureOutcomes(cfg);
@@ -335,6 +348,7 @@ function marsBrief(notes: string | null) {
 export async function startCall(opts: { leadId?: string; toNumber?: string; trigger: "AUTO" | "MANUAL" | "TEST" | "CAMPAIGN"; userId?: string | null; campaignId?: string; scheduledAt?: Date }) {
   const cfg = await getConfig();
   if (!cfg.agentId) throw new Error("Set up the AI caller first (Sales → AI call centre).");
+  await syncAgentIfStale(cfg);
   const lead = opts.leadId ? await db.lead.findUnique({ where: { id: opts.leadId }, include: { project: true } }) : null;
   if (opts.leadId && !lead) throw new Error("Lead not found.");
   if (lead?.doNotCallAt) throw new Error(`${lead.name} asked not to be called again.`);
