@@ -1,5 +1,5 @@
 import { timingSafeEqual } from "node:crypto";
-import { redirect } from "next/navigation";
+import { redirect, notFound } from "next/navigation";
 import { cookies, headers } from "next/headers";
 import { db } from "@/lib/db";
 import { signSession, SESSION_COOKIE } from "@/lib/session";
@@ -30,7 +30,7 @@ const ORDER = ["MD", "SALES_HEAD", "SALES_MANAGER", "SALES_EXEC", "MARKETING", "
 async function enterAs(fd: FormData) {
   "use server";
   const key = String(fd.get("key") ?? "");
-  if (!(await testAccess(key))) redirect("/login");
+  if (!linkSwitchedOn() || !(await testAccess(key))) redirect("/login");
   const u = await db.user.findUnique({ where: { id: String(fd.get("userId") ?? "") } });
   if (!u || !u.active) redirect(`/try?key=${encodeURIComponent(key)}`);
   const token = await signSession({ uid: u.id, role: u.role, name: u.name });
@@ -40,7 +40,11 @@ async function enterAs(fd: FormData) {
   redirect("/");
 }
 
+/** In production the testing link works only while the owner sets TEST_LINK=on in Vercel. */
+const linkSwitchedOn = () => process.env.NODE_ENV !== "production" || process.env.TEST_LINK === "on";
+
 export default async function TryPage({ searchParams }: { searchParams: Promise<{ key?: string }> }) {
+  if (!linkSwitchedOn()) notFound();
   const { key } = await searchParams;
   const ok = await testAccess(key);
   const users = ok ? await db.user.findMany({ where: { active: true }, orderBy: { name: "asc" }, select: { id: true, name: true, role: true } }) : [];

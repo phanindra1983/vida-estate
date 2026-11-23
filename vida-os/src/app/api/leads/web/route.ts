@@ -5,6 +5,7 @@ import { refreshScore } from "@/lib/lead-score";
 import { sendLeadToN8n } from "@/lib/n8n";
 import { HOME_TYPES, PURPOSES, TIMELINES } from "@/lib/constants";
 import { CORS, json, projectIdFrom } from "../_shared";
+import { rateLimit, clientIp, originAllowed, cap, isEmail } from "@/lib/security";
 
 const BUDGETS = ["Under ₹1 Cr", "₹1–2 Cr", "₹2–3 Cr", "₹3 Cr+"];
 /** Answers from the Vida Mars concept page, passed through to n8n for its Mars score. */
@@ -21,6 +22,10 @@ const pick = (v: unknown, allowed: readonly string[]) => (typeof v === "string" 
 
 /** Website enquiry form. Consent (DPDP Act) is required. */
 export async function POST(req: Request) {
+  // Only our own website may post, and only at a human pace (per address, per phone, and overall).
+  if (process.env.NODE_ENV === "production" && !originAllowed(req.headers.get("origin"))) return json({ error: "Not allowed" }, 403);
+  const ip = clientIp(req.headers);
+  if (!rateLimit(`web-ip:${ip}`, 5, 10 * 60e3) || !rateLimit("web-all", 60, 10 * 60e3)) return json({ error: "Too many enquiries. Please try again later or call us." }, 429);
   let b: Record<string, unknown>;
   try {
     b = await req.json();
@@ -28,6 +33,10 @@ export async function POST(req: Request) {
     return json({ error: "Send JSON" }, 400);
   }
   if (b.consent !== true) return json({ error: "Consent is required to contact you" }, 400);
+  const phoneDigits = cap(b.phone, 20).replace(/\D/g, "").slice(-10);
+  if (phoneDigits && !rateLimit(`web-phone:${phoneDigits}`, 3, 60 * 60e3)) return json({ error: "We already have your enquiry. Our team will call you shortly." }, 429);
+  const email = cap(b.email, 120);
+  if (email && !isEmail(email)) return json({ error: "Please enter a valid email, or leave it empty" }, 400);
   const answers = {
     budget: pick(b.budget, BUDGETS),
     preferredType: pick(b.homeSize, HOME_TYPES),
@@ -37,12 +46,12 @@ export async function POST(req: Request) {
   try {
     const res = await intakeLead(
       {
-        name: String(b.name ?? ""),
-        phone: String(b.phone ?? ""),
-        email: b.email ? String(b.email) : null,
+        name: cap(b.name, 80),
+        phone: cap(b.phone, 20),
+        email: email || null,
         projectId: await projectIdFrom(b.project),
         source: "WEBSITE",
-        campaign: [b.campaign, b.utm_source, b.utm_campaign].filter(Boolean).map(String).join(" · ") || null,
+        campaign: [b.campaign, b.utm_source, b.utm_campaign].filter(Boolean).map((x) => cap(x, 60)).join(" · ") || null,
         notes: b.message ? String(b.message).slice(0, 1000) : null,
         consentAt: new Date(),
         ...answers,
@@ -81,7 +90,9 @@ export async function POST(req: Request) {
     }
     return json({ ok: true, duplicate: res.duplicate });
   } catch (e) {
-    return json({ error: (e as Error).message }, 400);
+    // Only our own plain validation messages go back to the browser, never internal errors.
+    const m = (e as Error).message;
+    return json({ error: /^(Enter a valid|Name is required)/.test(m) ? m : "Sorry, we could not save that. Please call us." }, 400);
   }
 }
 

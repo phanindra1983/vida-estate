@@ -22,7 +22,8 @@ const API = "https://api.bolna.ai";
 const CFG = "bolna.config";
 
 /** Lead sources that enquired themselves and may be called automatically. */
-export const AUTO_CALL_SOURCES = ["WEBSITE", "META", "GOOGLE", "99ACRES", "MAGICBRICKS", "HOUSING", "NOBROKER", "SQUAREYARDS", "OTHER_PORTAL"];
+/** Website enquiries are NOT called automatically: anyone can type any number into a web form. Staff call them (or press "Call with AI"). */
+export const AUTO_CALL_SOURCES = ["META", "GOOGLE", "99ACRES", "MAGICBRICKS", "HOUSING", "NOBROKER", "SQUAREYARDS", "OTHER_PORTAL"];
 /** Bolna statuses after which nothing more changes. */
 export const FINAL = ["completed", "no-answer", "busy", "failed", "canceled", "stopped", "error", "balance-low", "FAILED_TO_START"];
 /** Calls that reached a person and talked. */
