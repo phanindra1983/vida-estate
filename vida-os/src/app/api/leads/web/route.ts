@@ -9,9 +9,29 @@ import { CORS, json, projectIdFrom } from "../_shared";
 
 const BUDGETS = ["Under ₹1 Cr", "₹1–2 Cr", "₹2–3 Cr", "₹3 Cr+"];
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+/** Answers from the Vida Mars concept page, passed through to n8n for its Mars score. */
+const MARS_ANSWERS = { speedSickness: ["Yes", "No"], likesRed: ["Yes", "No"], married: ["Yes", "No"], income: ["Under ₹1 Cr", "₹1–5 Cr", "Above ₹5 Cr"] } as const;
+function marsFrom(v: unknown) {
+  if (!v || typeof v !== "object") return null;
+  const o = v as Record<string, unknown>;
+  const out = Object.fromEntries(Object.entries(MARS_ANSWERS).map(([k, allowed]) => [k, pick(o[k], allowed)]));
+  return Object.values(out).some(Boolean) ? out : null;
+}
 
-function thankYouText(name: string, project: string | null, day: string | null) {
+function thankYouText(name: string, project: string | null, day: string | null, mars = false) {
   const when = day ? ` for ${new Date(day + "T00:00:00+05:30").toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}` : "";
+  if (mars)
+    return [
+      `Dear ${name.trim().split(/\s+/)[0]},`,
+      "",
+      "Thank you for registering your interest in Vida Mars Ultimate, our 100-acre plotted layout concept. We have received your answers.",
+      "",
+      "A Vida advisor will call you back between 9 am and 8 pm.",
+      "",
+      "Warm regards,",
+      "Vida Estates",
+      "https://www.vidaestates.co.in",
+    ].join("\n");
   return [
     `Dear ${name.trim().split(/\s+/)[0]},`,
     "",
@@ -71,7 +91,8 @@ export async function POST(req: Request) {
     // Thank the buyer by email straight away (new enquiries only, and only if they gave an email).
     let thankYou = "Not sent (no email)";
     if (lead && !res.duplicate && lead.email && EMAIL.test(lead.email)) {
-      const m = await sendEmail(lead.email, "Thank you for your enquiry – Vida Estates", thankYouText(lead.name, lead.project?.name ?? null, day), { type: "Lead", id: lead.id }, { live: true });
+      const isMars = !!marsFrom(b.mars);
+      const m = await sendEmail(lead.email, isMars ? "Thank you for your interest in Vida Mars – Vida Estates" : "Thank you for your enquiry – Vida Estates", thankYouText(lead.name, lead.project?.name ?? null, day, isMars), { type: "Lead", id: lead.id }, { live: true });
       thankYou = m.status === "SENT" ? "Email sent" : `Email ${m.status.toLowerCase()}`;
     } else if (res.duplicate) thankYou = "Not sent (repeat enquiry)";
     if (lead) {
@@ -90,6 +111,7 @@ export async function POST(req: Request) {
         score: lead.score,
         duplicate: res.duplicate,
         thankYou,
+        mars: marsFrom(b.mars),
       });
     }
     return json({ ok: true, duplicate: res.duplicate });

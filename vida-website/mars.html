@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en-IN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vida Mars · Ultimate Plots (test page) · Vida Estates</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#1A1F24">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 150'%3E%3Cpath d='M22,40 L60,128 L98,40' fill='none' stroke='%231A1F24' stroke-width='9'/%3E%3Ccircle cx='60' cy='18' r='11' fill='%23B98A4E'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400&family=Jost:wght@300;400;500&family=Tenor+Sans&display=swap" rel="stylesheet">
+<style>
+:root{
+  --canvas:#ECEAE5; --panel:#F6F4F0; --ink:#1A1F24; --ink-2:#2B3238;
+  --accent:#B98A4E; --accent-hover:#A27640; --text-secondary:#5C6166; --line:#D9D5CD; --ivory:#F6F2EA;
+  --rust:#8E3B22; --dust:#C9774A;
+  --display:"Tenor Sans","Avenir Next",sans-serif; --body:"Jost","Avenir Next",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+  --ease:cubic-bezier(.22,.61,.36,1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--canvas);color:var(--ink);font-family:var(--body);font-weight:300;line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.wrap{width:min(1180px,100% - 40px);margin-inline:auto}
+.eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--text-secondary)}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 1.6rem;border-radius:999px;background:var(--accent);color:#fff;font:500 .82rem var(--body);letter-spacing:.16em;text-transform:uppercase;text-decoration:none;border:0;cursor:pointer;transition:background .35s var(--ease)}
+.btn:hover{background:var(--accent-hover)}
+.notice{background:var(--ink);color:var(--ivory);font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;text-align:center;padding:.6rem 1rem}
+.hero{position:relative;min-height:78vh;display:grid;align-items:end;color:var(--ivory);overflow:hidden;
+  background:radial-gradient(120% 80% at 78% 18%,#E59A62 0%,var(--dust) 18%,var(--rust) 46%,#3A1A12 78%,#1A0D0A 100%)}
+.hero::before{content:"";position:absolute;inset:0;background:radial-gradient(1.5px 1.5px at 12% 20%,#fff8 50%,transparent 51%),radial-gradient(1px 1px at 30% 12%,#fff6 50%,transparent 51%),radial-gradient(1px 1px at 55% 8%,#fff5 50%,transparent 51%),radial-gradient(1.5px 1.5px at 88% 30%,#fff6 50%,transparent 51%)}
+.hero .planet{position:absolute;right:-12vmin;top:-14vmin;width:62vmin;aspect-ratio:1;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,#F0A874,#C9643A 42%,#7A2E18 72%,#3A140B);box-shadow:inset -40px -30px 80px #0008,0 0 120px #E59A6233}
+.hero .wrap{position:relative;padding:18vh 0 9vh}
+.hero h1{font-family:var(--display);font-weight:400;font-size:clamp(2.6rem,7vw,5.6rem);line-height:1.02;letter-spacing:.01em}
+.hero p{margin-top:1rem;max-width:44ch;font-size:1.1rem;opacity:.92}
+.hero .eyebrow{color:#F3D7BF}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);margin-top:-1px}
+.facts div{background:var(--panel);padding:1.6rem 1.4rem}
+.facts b{display:block;font-family:var(--display);font-weight:400;font-size:2rem;color:var(--ink)}
+section{padding:clamp(3.5rem,8vw,6.5rem) 0}
+h2{font-family:var(--display);font-weight:400;font-size:clamp(1.8rem,3.6vw,2.8rem);line-height:1.15}
+.plots{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1.2rem;margin-top:2.2rem}
+.plot{background:#fff;border:1px solid var(--line);border-radius:4px;padding:1.6rem}
+.plot h3{font-family:var(--display);font-weight:400;font-size:1.35rem}
+.plot p{margin-top:.5rem;color:var(--text-secondary);font-size:.95rem}
+.plot .size{font-family:var(--mono);font-size:.78rem;letter-spacing:.1em;color:var(--rust);margin-top:.9rem}
+.visit{display:grid;grid-template-columns:1fr 1.1fr;gap:clamp(2rem,5vw,4.5rem);align-items:start}
+.visit .lede{margin-top:1rem;color:var(--text-secondary);max-width:40ch}
+form{display:grid;gap:1.1rem;background:#fff;padding:clamp(1.4rem,3vw,2.6rem);border-radius:4px;border:1px solid var(--line)}
+label{display:grid;gap:.4rem;font-size:.82rem;font-weight:500;color:var(--ink-2)}
+label small{font-weight:400;color:var(--text-secondary);font-size:.82rem}
+input,select{font:inherit;font-weight:400;font-size:1rem;color:var(--ink);background:var(--panel);border:1px solid #CFC9BE;border-radius:6px;padding:.8rem .9rem;min-height:48px;width:100%}
+input:focus,select:focus{outline:2px solid var(--accent);outline-offset:-1px;background:#fff}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:1.1rem}
+.consent{display:flex;gap:.7rem;align-items:flex-start;font-weight:400;color:var(--text-secondary);font-size:.85rem}
+.consent input{width:20px;height:20px;min-height:0;margin-top:2px;accent-color:var(--accent)}
+.success{display:none;padding:1rem 1.1rem;border-radius:6px;background:#EEF4EE;color:#2F5D46;font-size:.95rem}
+form.sent .success{display:block}
+form.sent .fields{display:none}
+footer{background:var(--ink);color:#F6F2EAcc;padding:2.4rem 0;font-size:.85rem}
+footer a{text-decoration:none;border-bottom:1px solid #F6F2EA55}
+@media (max-width:760px){.visit,.two{grid-template-columns:1fr}.hero{min-height:70vh}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<p class="notice" role="note">Concept test page · Vida Mars is not a real offering. Nothing here can be bought or booked.</p>
+
+<header class="hero">
+  <div class="planet" aria-hidden="true"></div>
+  <div class="wrap">
+    <p class="eyebrow">Vida Estates · Mars · Concept</p>
+    <h1>Vida Mars<br>Ultimate</h1>
+    <p>A 100-acre plotted layout for people who want room to build their own home. On the red planet.</p>
+    <p style="margin-top:1.8rem"><a class="btn" href="#visit">Register interest</a></p>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="facts">
+    <div><span class="eyebrow">Land</span><b>100 acres</b></div>
+    <div><span class="eyebrow">Plots</span><b>3 sizes</b></div>
+    <div><span class="eyebrow">Layout</span><b>Gated</b></div>
+    <div><span class="eyebrow">Status</span><b>Concept</b></div>
+  </div>
+</div>
+
+<main>
+  <section>
+    <div class="wrap">
+      <p class="eyebrow">Plots</p>
+      <h2>Choose your patch of red.</h2>
+      <div class="plots">
+        <article class="plot"><h3>Crater View</h3><p>Corner plots on the rim, with the widest views across the plain.</p><p class="size">300 sq yd</p></article>
+        <article class="plot"><h3>Red Valley</h3><p>Plots on the main avenue, close to the clubhouse dome and the landing pad.</p><p class="size">500 sq yd</p></article>
+        <article class="plot"><h3>Olympus Estate</h3><p>Large plots at the quiet end of the layout, for a villa with room to spare.</p><p class="size">1,000 sq yd</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section id="visit" style="background:var(--panel)">
+    <div class="wrap visit">
+      <div>
+        <p class="eyebrow">Register interest</p>
+        <h2>Tell us what you're looking for.</h2>
+        <p class="lede">A Vida advisor will call you back. If you leave your email, we'll send a confirmation straight away.</p>
+      </div>
+      <form id="marsForm" novalidate>
+        <div class="fields" style="display:grid;gap:1.1rem">
+          <label>Name<input name="name" autocomplete="name" required></label>
+          <label>Mobile<input name="phone" type="tel" inputmode="tel" autocomplete="tel" required pattern="[0-9+ ]{10,15}"></label>
+          <label>Email <small>(optional, for your confirmation)</small><input name="email" type="email" autocomplete="email"></label>
+          <div class="two">
+            <label>Plot size
+              <select name="plot"><option value="">Not sure yet</option><option>300 sq yd · Crater View</option><option>500 sq yd · Red Valley</option><option>1,000 sq yd · Olympus Estate</option></select>
+            </label>
+            <label>Budget
+              <select name="budget"><option value="">Prefer not to say</option><option>Under ₹1 Cr</option><option>₹1–2 Cr</option><option>₹2–3 Cr</option><option>₹3 Cr+</option></select>
+            </label>
+          </div>
+          <div class="two">
+            <label>Buying to
+              <select name="purpose"><option value="">Prefer not to say</option><option value="LIVE">Live in</option><option value="INVEST">Invest</option></select>
+            </label>
+            <label>When do you plan to buy?
+              <select name="timeline"><option value="">Just exploring</option><option value="NOW">Ready now</option><option value="3M">Within 3 months</option><option value="6M">Within 6 months</option><option value="12M">Within a year</option><option value="LATER">Later</option></select>
+            </label>
+          </div>
+          <p class="eyebrow" style="margin-top:.4rem">A few Mars questions</p>
+          <div class="two">
+            <label>Do you get speed or motion sickness?
+              <select name="speedSickness" required><option value="">Choose</option><option>No</option><option>Yes</option></select>
+            </label>
+            <label>Do you enjoy the colour red?
+              <select name="likesRed" required><option value="">Choose</option><option>Yes</option><option>No</option></select>
+            </label>
+          </div>
+          <div class="two">
+            <label>Are you married?
+              <select name="married" required><option value="">Choose</option><option>No</option><option>Yes</option></select>
+            </label>
+            <label>Annual income
+              <select name="income" required><option value="">Choose</option><option>Under ₹1 Cr</option><option>₹1–5 Cr</option><option>Above ₹5 Cr</option></select>
+            </label>
+          </div>
+          <label class="consent"><input type="checkbox" name="consent" required> I agree to be contacted by Vida Estates about this enquiry.</label>
+          <div><button class="btn" type="submit">Register interest</button></div>
+        </div>
+        <p class="success" role="status" id="marsThanks">Thank you. A Vida advisor will call you back between 9 am and 8 pm.</p>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">Vida Estates · Hyderabad · <a href="/">Back to vidaestates.co.in</a></div>
+</footer>
+
+<script src="config.js?v=3"></script>
+<script>
+(() => {
+  const VIDA_OS_URL = (window.VIDA_OS_URL || 'http://localhost:3100').replace(/\/$/, '');
+  const form = document.getElementById('marsForm'), btn = form.querySelector('button[type=submit]');
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    if (!form.checkValidity()) { form.reportValidity(); return; }
+    const d = new FormData(form);
+    const qs = new URLSearchParams(location.search);
+    const payload = {
+      name: d.get('name'), phone: d.get('phone'), email: d.get('email') || null, project: 'MARS', consent: true,
+      budget: d.get('budget') || null, purpose: d.get('purpose') || null, timeline: d.get('timeline') || null,
+      mars: { speedSickness: d.get('speedSickness'), likesRed: d.get('likesRed'), married: d.get('married'), income: d.get('income') },
+      message: `Vida Mars (concept test page) · Plot: ${d.get('plot') || 'not sure yet'}\nSpeed sickness: ${d.get('speedSickness')} · Likes red: ${d.get('likesRed')} · Married: ${d.get('married')} · Income: ${d.get('income')}`,
+      campaign: 'Vida Mars · test page', utm_source: qs.get('utm_source'), utm_campaign: qs.get('utm_campaign'),
+    };
+    btn.disabled = true; btn.textContent = 'Sending…';
+    try {
+      const res = await fetch(VIDA_OS_URL + '/api/leads/web', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Could not send');
+      const first = String(d.get('name')).trim().split(/\s+/)[0];
+      document.getElementById('marsThanks').textContent = `Thank you, ${first}! We've received your interest in Vida Mars Ultimate. A Vida advisor will call you back between 9 am and 8 pm.` + (d.get('email') ? ` A confirmation is on its way to ${d.get('email')}.` : '');
+      form.classList.add('sent');
+    } catch (err) {
+      alert('Sorry, that did not go through. Please try again in a minute.');
+    } finally { btn.disabled = false; btn.textContent = 'Register interest'; }
+  });
+})();
+</script>
+</body>
+</html>
