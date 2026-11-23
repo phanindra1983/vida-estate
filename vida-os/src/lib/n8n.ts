@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import { publicUrl } from "./notify";
 import { temperature } from "./lead-score";
 
@@ -40,4 +41,12 @@ export async function sendLeadToN8n(lead: N8nLead) {
       signal: AbortSignal.timeout(4000),
     });
   } catch {}
+}
+
+/** Requests from n8n back into Vida OS carry the same shared key (header x-vida-key). */
+export function n8nKeyOk(given: string | null) {
+  const want = process.env.N8N_LEAD_WEBHOOK_SECRET ?? "";
+  if (!want || !given) return false;
+  const a = Buffer.from(given), b = Buffer.from(want);
+  return a.length === b.length && timingSafeEqual(a, b);
 }

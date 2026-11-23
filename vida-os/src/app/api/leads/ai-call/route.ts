@@ -1,7 +1,7 @@
-import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { bolnaConfigured, startCall } from "@/lib/bolna";
+import { n8nKeyOk } from "@/lib/n8n";
 
 /**
  * The n8n lead workflow asks for an immediate AI (Bolna) call to a hot lead (score above 80).
@@ -9,15 +9,9 @@ import { bolnaConfigured, startCall } from "@/lib/bolna";
  * Skips a lead that is not consented, asked not to be called, or was AI-called in the last 24 hours
  * (so a repeat enquiry or Vida OS's own auto-call does not ring the buyer twice).
  */
-function keyOk(given: string | null) {
-  const want = process.env.N8N_LEAD_WEBHOOK_SECRET ?? "";
-  if (!want || !given) return false;
-  const a = Buffer.from(given), b = Buffer.from(want);
-  return a.length === b.length && timingSafeEqual(a, b);
-}
 
 export async function POST(req: Request) {
-  if (!keyOk(req.headers.get("x-vida-key"))) return NextResponse.json({ error: "Not allowed" }, { status: 403 });
+  if (!n8nKeyOk(req.headers.get("x-vida-key"))) return NextResponse.json({ error: "Not allowed" }, { status: 403 });
   let leadId = "";
   try {
     leadId = String((await req.json()).leadId ?? "");
