@@ -149,6 +149,41 @@ section{position:relative}
 .card .rera{margin-top:1rem;font-family:var(--mono);font-size:.68rem;color:rgba(255,255,255,.6)}
 .caption{position:absolute;top:16px;right:16px;z-index:1;font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.7)}
 
+/* philosophy + experience */
+.philo{background:var(--ink);color:var(--ivory)}
+.philo .eyebrow{color:var(--accent)}
+.ph-open h2{font-size:clamp(3.2rem,8vw,7rem);font-style:italic;font-weight:400;margin:.8rem 0 2.4rem;line-height:1}
+.ph-open h2 em{color:var(--accent)}
+.ph-intro{display:grid;grid-template-columns:1.1fr 1fr;gap:clamp(24px,5vw,80px);align-items:start;border-top:1px solid rgba(244,241,236,.16);padding-top:2.2rem}
+.ph-lede{font-family:var(--display);font-size:clamp(1.5rem,2.4vw,2.05rem);line-height:1.3}
+.ph-intro p:not(.ph-lede){color:rgba(244,241,236,.72);font-size:1.05rem;max-width:44ch}
+.ph-intro em{font-family:var(--display);font-size:1.18em;color:var(--ivory)}
+.ph-day{margin:clamp(64px,8vw,112px) auto;max-width:860px;text-align:center}
+.ph-day blockquote{font-family:var(--display);font-style:italic;font-size:clamp(1.35rem,2.3vw,1.9rem);line-height:1.45;color:var(--ivory)}
+.ph-day figcaption{margin-top:1.4rem;font-weight:500;font-size:.68rem;letter-spacing:.26em;text-transform:uppercase;color:var(--accent)}
+.ph-head h3{font-size:clamp(1.9rem,3.2vw,2.7rem);margin:.6rem 0 2.2rem}
+.beliefs{list-style:none;display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid rgba(244,241,236,.16)}
+.beliefs li{padding:2.2rem 2rem 2.4rem 0;border-bottom:1px solid rgba(244,241,236,.16)}
+.beliefs li:not(:nth-child(3n+1)){padding-left:2rem;border-left:1px solid rgba(244,241,236,.16)}
+.beliefs .n,.moments .n{font-family:var(--display);font-size:1.5rem;color:var(--accent)}
+.beliefs h4,.moments h4{font-family:var(--display);font-weight:400;font-size:1.6rem;line-height:1.15;margin:.5rem 0 .7rem}
+.beliefs p{color:rgba(244,241,236,.7);font-size:.95rem;max-width:36ch}
+.mission{display:grid;grid-template-columns:1fr 1fr;gap:clamp(24px,5vw,80px);margin-top:clamp(64px,8vw,104px)}
+.mission>div{border-top:1px solid var(--accent);padding-top:1.6rem}
+.m-text{font-family:var(--display);font-size:clamp(1.35rem,2.1vw,1.8rem);line-height:1.35;margin-top:.9rem}
+.journey{background:var(--panel)}
+.journey h2{font-size:clamp(2.2rem,4vw,3.4rem);margin:.6rem 0 1rem;max-width:20ch}
+.j-lede{color:var(--text-secondary);max-width:60ch;font-size:1.05rem}
+.moments{list-style:none;display:grid;grid-template-columns:repeat(6,1fr);gap:clamp(14px,1.8vw,24px);margin-top:3rem}
+.moments li{border-top:1px solid var(--line);padding-top:1.2rem}
+.moments li:first-child{border-top:2px solid var(--accent)}
+.moments h4{font-size:1.4rem}
+.moments p{color:var(--text-secondary);font-size:.9rem}
+.j-cta{margin-top:3.4rem;font-family:var(--display);font-size:1.4rem}
+.j-cta a{color:var(--brass-text);text-decoration:none;border-bottom:1px solid var(--accent);margin-left:.4rem;white-space:nowrap}
+@media (max-width:1000px){.moments{grid-template-columns:repeat(3,1fr);row-gap:2rem}}
+@media (max-width:860px){.beliefs{grid-template-columns:1fr 1fr}.beliefs li:not(:nth-child(3n+1)){padding-left:0;border-left:0}.beliefs li:nth-child(even){padding-left:1.6rem;border-left:1px solid rgba(244,241,236,.16)}}
+@media (max-width:640px){.ph-intro,.mission{grid-template-columns:1fr}.beliefs{grid-template-columns:1fr}.beliefs li:nth-child(even){padding-left:0;border-left:0}.moments{grid-template-columns:1fr 1fr}}
 /* vida luxora */
 .luxora{background:var(--panel)}
 .lx-banner{position:relative;height:clamp(320px,52vw,640px);background:#1a2232 url("assets/luxora-one-night.webp") center 58%/cover no-repeat}
@@ -308,6 +343,7 @@ body.paused *,body.paused *::before,body.paused *::after{animation-play-state:pa
       <ul>
         <li class="hide-sm"><a href="#projects">Projects</a></li>
         <li class="hide-sm"><a href="#live">Progress</a></li>
+        <li class="hide-sm"><a href="#philosophy">Philosophy</a></li>
         <li class="hide-sm"><a href="#promises">Our promise</a></li>
         <li><a class="login" data-os="/login" href="http://localhost:3100/login" aria-label="Staff login to Vida OS"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c1.4-3.6 4.2-5.4 7.5-5.4s6.1 1.8 7.5 5.4"/></svg><span>Login</span></a></li>
         <li><a class="btn" href="#visit">Book a visit</a></li>
@@ -498,6 +534,55 @@ body.paused *,body.paused *::before,body.paused *::after{animation-play-state:pa
     </div>
   </section>
 
+  <section class="sec philo" id="philosophy" aria-labelledby="philo-h">
+    <div class="wrap">
+      <div class="ph-open reveal">
+        <p class="eyebrow">Our philosophy</p>
+        <h2 id="philo-h">Elevating <em>life</em>.</h2>
+        <div class="ph-intro">
+          <p class="ph-lede">Hyderabad is rising faster than ever. Glass, traffic, deadlines. In a concrete jungle it is easy to live a whole week and remember none of it.</p>
+          <p>We started Vida with one question: <em>what would make a home worth coming back to every evening?</em> Not the marble. Not the square feet. The life that happens inside it.</p>
+        </div>
+      </div>
+
+      <figure class="ph-day reveal">
+        <blockquote>Six in the morning, a walk under the trees before the city wakes. Seven in the evening, the children’s voices carrying across the courtyard and a neighbour who already knows your name. Nine at night, a few quiet laps while the city lights come on below.</blockquote>
+        <figcaption>That is the day we design for. Everything else follows from it.</figcaption>
+      </figure>
+
+      <div class="ph-head reveal"><p class="eyebrow">What we believe</p><h3>Six beliefs behind every Vida home</h3></div>
+      <ol class="beliefs reveal">
+        <li><span class="n">01</span><h4>Life comes first</h4><p>We do not sell square feet. We shape how people live: the light they wake to, the quiet they come home to, the air between the towers.</p></li>
+        <li><span class="n">02</span><h4>Celebrate every day</h4><p>Not only festivals and anniversaries. A sunset from the terrace, a Sunday breakfast in the garden, a birthday downstairs with friends. We plan spaces that turn ordinary days into occasions.</p></li>
+        <li><span class="n">03</span><h4>An active life, built in</h4><p>Gyms, courts, jogging tracks and yoga lawns placed where you will actually use them: one lift ride from home, not one drive away.</p></li>
+        <li><span class="n">04</span><h4>Clubs run by people who love them</h4><p>We bring in specialist operators, so fitness, sport and wellness are run by experts, not left to a maintenance contract. At Luxora One that means Ileseum Clubs (proposed).</p></li>
+        <li><span class="n">05</span><h4>Community, by design</h4><p>Fewer homes on a floor, a shared garden at the centre and reasons to meet all year round. Neighbours become friends when the building gives them a chance to.</p></li>
+        <li><span class="n">06</span><h4>Invested in people</h4><p>A home is the biggest decision most families ever make. We build for value that lasts: open space that stays open, one honest price sheet, and keys on the date in your agreement.</p></li>
+      </ol>
+
+      <div class="mission reveal">
+        <div><p class="eyebrow">Our mission</p><p class="m-text">To elevate the everyday lives of the families who live with us, by building homes where light, health, celebration and community come first, in a city that is fast becoming a concrete jungle.</p></div>
+        <div><p class="eyebrow">Our vision</p><p class="m-text">A Hyderabad where the best address is measured in good mornings, shared evenings and years of value, not in square feet alone.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec journey" id="experience" aria-labelledby="journey-h">
+    <div class="wrap">
+      <div class="reveal"><p class="eyebrow">The Vida experience</p><h2 id="journey-h">You will never feel like a booking number</h2>
+        <p class="j-lede">Luxury is remembered in moments, not in brochures. One relationship manager stays with you from your first visit to the first year after handover, and every step has been thought through.</p></div>
+      <ol class="moments reveal">
+        <li><span class="n">01</span><h4>Discover</h4><p>A film, a book and a private invitation. Never a mass mailer.</p></li>
+        <li><span class="n">02</span><h4>Invite</h4><p>A personal note and a call from the manager who will look after you.</p></li>
+        <li><span class="n">03</span><h4>Visit</h4><p>A calm sales lounge, the sample home and the full price sheet.</p></li>
+        <li><span class="n">04</span><h4>Reserve</h4><p>Paperwork presented with care and explained in plain words.</p></li>
+        <li><span class="n">05</span><h4>Handover</h4><p>A small ceremony: the key, the keepsake box, the thank-you.</p></li>
+        <li><span class="n">06</span><h4>Belong</h4><p>Owner events, the first-year check-in and every anniversary after.</p></li>
+      </ol>
+      <p class="j-cta reveal">The best way to understand a philosophy is to walk through it. <a href="#visit">Book a site visit <span aria-hidden="true">→</span></a></p>
+    </div>
+  </section>
+
   <section class="sec" id="promises" style="padding-top:0">
     <div class="wrap">
       <div class="reveal" style="margin-bottom:2.4rem"><p class="eyebrow">Our promise</p><h2 style="font-size:clamp(2.2rem,4vw,3.4rem)">Three things we put in writing</h2></div>
@@ -572,7 +657,7 @@ body.paused *,body.paused *::before,body.paused *::after{animation-play-state:pa
     <div class="top">
       <a href="#top" class="logo cobrand" aria-label="Vbridge Ventures and Vida Estates, back to top"><svg viewBox="-4 -46 1124 232" role="img" aria-label="Vbridge Ventures and Vida Estates"><g transform="translate(0,0)"><path d="M0,0 L38,100 L76,0 M116,0 V100 M116,0 H138 A23,23 0 0 1 138,46 H116 M116,46 H142 A27,27 0 0 1 142,100 H116 M209,100 V0 H233 A24,24 0 0 1 233,48 H209 M231,48 L259,100 M299,0 V100 M339,0 H357 A50,50 0 0 1 357,100 H339 Z M535.3,17.9 A50,50 0 1 0 547,50 H505 M637,0 H587 V100 H637 M587,50 H629" fill="none" stroke="currentColor" stroke-width="5.5" stroke-miterlimit="20"/><circle cx="299" cy="-26" r="8" fill="#B08A55"/><path d="M0,128 H637" stroke="#B08A55" stroke-width="1.6"/><text x="1" y="171" font-family="Jost, Avenir Next, sans-serif" font-size="27" letter-spacing="34.9" fill="currentColor">VENTURES</text></g><path d="M707,-40 V170" stroke="#B08A55" stroke-width="1.6"/><g transform="translate(777,0)"><path d="M0,0 L38,100 L76,0 M118,0 V100 M160,0 H178 A50,50 0 0 1 178,100 H160 Z M262,100 L300,0 L338,100" fill="none" stroke="currentColor" stroke-width="5.5" stroke-miterlimit="20"/><circle cx="118" cy="-26" r="8" fill="#B08A55"/><path d="M0,128 H338" stroke="#B08A55" stroke-width="1.6"/><text x="1" y="171" font-family="Jost, Avenir Next, sans-serif" font-size="27" letter-spacing="25.6" fill="currentColor">ESTATES</text></g></svg></a>
       <ul><li>Sales office address, Kokapet, Hyderabad</li><li><a href="tel:+910000000000">+91 00000 00000</a></li><li><a href="mailto:hello@vidaestates.com">hello@vidaestates.com</a></li></ul>
-      <ul><li><a href="#projects">Projects</a></li><li><a href="#live">Progress</a></li><li><a href="#visit">Book a visit</a></li><li><a data-os="/login" href="http://localhost:3100/login">Staff login</a></li></ul>
+      <ul><li><a href="#projects">Projects</a></li><li><a href="#philosophy">Our philosophy</a></li><li><a href="#live">Progress</a></li><li><a href="#visit">Book a visit</a></li><li><a data-os="/login" href="http://localhost:3100/login">Staff login</a></li></ul>
     </div>
     <p class="tag sig">Elevating <em>life</em>.</p>
     <div class="legal">
