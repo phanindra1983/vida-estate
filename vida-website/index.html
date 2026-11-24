@@ -151,8 +151,14 @@ section{position:relative}
 
 /* vida luxora */
 .luxora{background:var(--panel)}
-.lx-banner{position:relative;height:clamp(320px,52vw,640px);background:#1a2232 url("assets/luxora-night.webp") center 30%/cover no-repeat}
+.lx-banner{position:relative;height:clamp(320px,52vw,640px);background:#1a2232 url("assets/luxora-one-night.webp") center 58%/cover no-repeat}
 .lx-banner .caption{top:auto;bottom:16px}
+.lx-by{font-weight:500;font-size:.66rem;letter-spacing:.26em;text-transform:uppercase;color:var(--brass-text);margin:-.2rem 0 1.2rem}
+.lx-shots{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:clamp(12px,1.6vw,20px);margin:0 0 clamp(48px,6vw,80px)}
+.lx-shots figure{margin:0}.lx-shots figure>div{aspect-ratio:4/3;background:#DDD6CA center/cover no-repeat;border-radius:2px}
+.lx-shots figure:nth-child(2)>div{background-size:132%;background-position:56% 50%}.lx-shots figure:nth-child(3)>div{background-size:contain;background-color:#fff}
+.lx-shots figcaption{font-family:var(--display);font-style:italic;font-size:1.15rem;margin-top:.7rem;color:var(--ink)}
+@media (max-width:760px){.lx-shots{grid-template-columns:1fr}}
 .lx-body{padding:clamp(56px,7vw,96px) 0 clamp(72px,9vw,120px)}
 .lx-intro h2{font-size:clamp(2.6rem,5.4vw,4.6rem);margin:.6rem 0 1rem}
 .lx-intro .lede{max-width:52ch;color:var(--text-secondary);font-size:1.08rem}
@@ -365,12 +371,12 @@ body.paused *,body.paused *::before,body.paused *::after{animation-play-state:pa
             <p class="rera" data-live="rera">TS RERA No. shown on approval</p>
           </div>
         </a>
-        <a class="card" href="#luxora" data-project="VL" aria-label="Vida Luxora, GOCL, Kukatpally. See the project">
-          <div class="img lazy-bg" data-bg="assets/luxora-aerial.webp"></div>
+        <a class="card" href="#luxora" data-project="VL" aria-label="Luxora One, GOCL, Kukatpally. See the project">
+          <div class="img lazy-bg" data-bg="assets/luxora-one-aerial.webp"></div>
           <span class="caption">Artist's impression</span>
           <div class="body">
             <span class="tag" data-live="tag">GOCL, Kukatpally · Approvals in progress</span>
-            <h3>Vida Luxora</h3>
+            <h3>Luxora One</h3>
             <div class="meta"><span>3 BHK only</span><span>2,040 to 2,550 sq ft</span><span>3 towers, 28 floors</span></div>
             <p class="rera" data-live="rera">TS RERA registration in progress</p>
           </div>
@@ -390,12 +396,13 @@ body.paused *,body.paused *::before,body.paused *::after{animation-play-state:pa
   </section>
 
   <section class="luxora" id="luxora" aria-labelledby="luxora-h">
-    <div class="lx-banner" role="img" aria-label="Vida Luxora's three towers and clubhouse at dusk, artist's impression"><span class="caption">Artist's impression</span></div>
+    <div class="lx-banner" role="img" aria-label="Luxora One's three towers and clubhouse at dusk, seen from the road, artist's impression"><span class="caption">Artist's impression</span></div>
     <div class="wrap lx-body">
       <div class="lx-intro reveal">
-        <p class="eyebrow">GOCL, Kukatpally · TS RERA registration in progress</p>
-        <h2 id="luxora-h">Vida Luxora</h2>
-        <p class="lede">Three towers of 28 floors, only 3 BHK homes, and 80% of the land left open. Just 8 to 10 homes on each floor, so every home gets light, air and room to breathe.</p>
+        <p class="eyebrow">GOCL, Kukatpally · Near HITEC City · TS RERA registration in progress</p>
+        <h2 id="luxora-h">Luxora One</h2>
+        <p class="lx-by">A Cyber Homes development, in partnership with Vida Estates</p>
+        <p class="lede">A boutique community for families who would rather know their neighbours than count them. Three towers of 28 floors, only 3 BHK homes, 8 to 10 homes on a floor, and 80% of the land left open.</p>
       </div>
       <dl class="lx-facts reveal">
         <div><dt>Towers</dt><dd>3</dd></div>
@@ -406,6 +413,11 @@ body.paused *,body.paused *::before,body.paused *::after{animation-play-state:pa
         <div><dt>High-speed lifts</dt><dd>22</dd></div>
       </dl>
 
+      <div class="lx-shots reveal">
+        <figure><div class="lazy-bg" data-bg="assets/luxora-one-aerial.webp" role="img" aria-label="Aerial view of the three towers around the central courtyard, artist's impression"></div><figcaption>Three towers. One courtyard.</figcaption></figure>
+        <figure><div class="lazy-bg" data-bg="assets/luxora-one-masterplan.webp" role="img" aria-label="Masterplan with the 300 ft central garden"></div><figcaption>Planned from the garden outwards.</figcaption></figure>
+        <figure><div class="lazy-bg" data-bg="assets/luxora-one-skypool.webp" role="img" aria-label="Plan of the sky lounge and infinity pool"></div><figcaption>The sky lounge and infinity pool.</figcaption></figure>
+      </div>
       <div class="lx-grid">
         <div class="reveal">
           <h3>The homes</h3>
@@ -423,6 +435,7 @@ body.paused *,body.paused *::before,body.paused *::after{animation-play-state:pa
           <h3>Life inside</h3>
           <ul class="lx-list">
             <li>Sky lounge with an infinity pool and an observatory deck</li>
+            <li>A 70,000 sq ft club with Ileseum Clubs (proposed)</li>
             <li>Gym, yoga studio and indoor sports</li>
             <li>Co-working spaces and private meeting rooms</li>
             <li>Rooftop jogging track and rooftop amenities</li>
@@ -442,7 +455,7 @@ body.paused *,body.paused *::before,body.paused *::after{animation-play-state:pa
           <a class="btn" href="#visit" style="margin-top:1.8rem">Register your interest</a>
         </div>
       </div>
-      <p class="lx-legal">Vida Luxora is awaiting TS RERA registration. Details are indicative and may change with approvals. Bookings open only after registration.</p>
+      <p class="lx-legal">Luxora One is awaiting TS RERA registration. Details are indicative and may change with approvals. Bookings open only after registration.</p>
     </div>
   </section>
 
@@ -519,7 +532,7 @@ body.paused *,body.paused *::before,body.paused *::after{animation-play-state:pa
           <label>Mobile<input name="phone" type="tel" inputmode="tel" autocomplete="tel" required pattern="[0-9+ ]{10,15}"></label>
           <label>Email <span style="font-weight:400;color:var(--text-secondary)">(optional, for your confirmation)</span><input name="email" type="email" autocomplete="email"></label>
           <label>Project
-            <select name="project"><option value="VA">Vida Aurum · Kokapet</option><option value="VL">Vida Luxora · Kukatpally</option><option value="MARS">Vida Mars · Concept</option><option value="">Not sure yet</option></select>
+            <select name="project"><option value="VA">Vida Aurum · Kokapet</option><option value="VL">Luxora One · Kukatpally</option><option value="MARS">Vida Mars · Concept</option><option value="">Not sure yet</option></select>
           </label>
           <label>Budget
             <select name="budget"><option value="">Prefer not to say</option><option>Under ₹1 Cr</option><option>₹1–2 Cr</option><option>₹2–3 Cr</option><option>₹3 Cr+</option></select>
