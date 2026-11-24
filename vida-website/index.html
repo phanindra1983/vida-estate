@@ -154,10 +154,9 @@ section{position:relative}
 .lx-banner{position:relative;height:clamp(320px,52vw,640px);background:#1a2232 url("assets/luxora-one-night.webp") center 58%/cover no-repeat}
 .lx-banner .caption{top:auto;bottom:16px}
 .lx-by{font-weight:500;font-size:.66rem;letter-spacing:.26em;text-transform:uppercase;color:var(--brass-text);margin:-.2rem 0 1.2rem}
-.lx-shots{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:clamp(12px,1.6vw,20px);margin:0 0 clamp(48px,6vw,80px)}
-.lx-shots figure{margin:0}.lx-shots figure>div{aspect-ratio:4/3;background:#DDD6CA center/cover no-repeat;border-radius:2px}
-.lx-shots figure:nth-child(2)>div{background-size:132%;background-position:56% 50%}.lx-shots figure:nth-child(3)>div{background-size:contain;background-color:#fff}
-.lx-shots figcaption{font-family:var(--display);font-style:italic;font-size:1.15rem;margin-top:.7rem;color:var(--ink)}
+.lx-shots{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(14px,1.8vw,24px);margin:0 0 clamp(48px,6vw,80px);align-items:start}
+.lx-shots figure{margin:0;display:flex;flex-direction:column}.lx-shots figure>div{aspect-ratio:16/10;background:#DDD6CA center/cover no-repeat;border-radius:2px}
+.lx-shots figcaption{font-family:var(--display);font-style:italic;font-size:1.15rem;line-height:1.3;margin-top:.8rem;color:var(--ink)}
 @media (max-width:760px){.lx-shots{grid-template-columns:1fr}}
 .lx-body{padding:clamp(56px,7vw,96px) 0 clamp(72px,9vw,120px)}
 .lx-intro h2{font-size:clamp(2.6rem,5.4vw,4.6rem);margin:.6rem 0 1rem}
@@ -173,6 +172,8 @@ section{position:relative}
 .lx-table th{text-align:left;font-family:var(--mono);font-weight:400;font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;color:var(--text-secondary);padding:.6rem .6rem .6rem 0;border-bottom:1px solid var(--line)}
 .lx-table td{padding:.9rem .6rem .9rem 0;border-bottom:1px solid var(--line);vertical-align:top}
 .lx-table td:first-child{font-family:var(--display);font-size:1.15rem;white-space:nowrap}
+.lx-table td:nth-child(2){white-space:nowrap}.lx-table td{text-wrap:pretty}
+@media (max-width:560px){.lx-table{font-size:.84rem}.lx-table td:first-child{font-size:1.02rem}}
 .lx-note,.lx-legal{margin-top:1rem;font-size:.86rem;color:var(--text-secondary)}
 .lx-legal{margin-top:3.4rem;font-family:var(--mono);font-size:.68rem}
 .lx-list{list-style:none;display:grid;gap:.75rem}
@@ -207,6 +208,9 @@ section{position:relative}
 .scrubber:active{cursor:grabbing}
 .track:focus-within .handle{outline:2px solid #fff;outline-offset:3px}
 .track{margin-bottom:4.4rem}
+.track .dot.now span{top:17.9px;transform:translateX(-50%) scale(.741);transform-origin:50% 0}
+.track .dot:first-child span{left:0;transform:none}.track .dot:last-child span{left:auto;right:0;transform:none}
+.track .dot.now:first-child span{transform:scale(.741);transform-origin:0 0}.track .dot.now:last-child span{transform:scale(.741);transform-origin:100% 0}
 .readout{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;margin-top:1.6rem;background:rgba(246,242,234,.12);border:1px solid rgba(246,242,234,.12)}
 .readout div{background:var(--ink);padding:1.2rem 1.3rem}
 .readout dt{font-family:var(--mono);font-size:.64rem;letter-spacing:.14em;text-transform:uppercase;color:rgba(246,242,234,.55)}
@@ -298,7 +302,7 @@ body.paused *,body.paused *::before,body.paused *::after{animation-play-state:pa
 <header class="nav" id="nav">
   <div class="wrap">
     <a href="#top" class="logo" aria-label="Vida Estates home">
-      <svg viewBox="0 0 418 250" aria-hidden="true"><g transform="translate(40,60)"><g fill="none" stroke="currentColor" stroke-width="5.5" stroke-miterlimit="20"><path d="M0,0 L38,100 L76,0"/><path d="M118,0 V100"/><path d="M160,0 H178 A50,50 0 0 1 178,100 H160 Z"/><path d="M262,100 L300,0 L338,100"/></g><circle cx="118" cy="-26" r="8" fill="#B08A55"/><path d="M0,128 H338" stroke="#B08A55" stroke-width="1.6"/><text x="0" y="162" font-family="Jost, Avenir Next, sans-serif" font-size="17" letter-spacing="16.1" fill="currentColor">ESTATES</text></g></svg>
+      <svg viewBox="0 0 418 250" aria-hidden="true"><g transform="translate(40,60)"><g fill="none" stroke="currentColor" stroke-width="5.5" stroke-miterlimit="20"><path d="M0,0 L38,100 L76,0"/><path d="M118,0 V100"/><path d="M160,0 H178 A50,50 0 0 1 178,100 H160 Z"/><path d="M262,100 L300,0 L338,100"/></g><circle cx="118" cy="-26" r="8" fill="#B08A55"/><path d="M0,128 H338" stroke="#B08A55" stroke-width="1.6"/><text x="0" y="172" font-family="Jost, Avenir Next, sans-serif" font-size="28" letter-spacing="26.5" fill="currentColor">ESTATES</text></g></svg>
     </a>
     <nav aria-label="Main">
       <ul>
@@ -530,7 +534,7 @@ body.paused *,body.paused *::before,body.paused *::after{animation-play-state:pa
         <div class="fields" style="display:grid;gap:1.1rem">
           <label>Name<input name="name" autocomplete="name" required></label>
           <label>Mobile<input name="phone" type="tel" inputmode="tel" autocomplete="tel" required pattern="[0-9+ ]{10,15}"></label>
-          <label>Email <span style="font-weight:400;color:var(--text-secondary)">(optional, for your confirmation)</span><input name="email" type="email" autocomplete="email"></label>
+          <label>Email <span style="font-weight:400;color:var(--text-secondary)">(optional)</span><input name="email" type="email" autocomplete="email"></label>
           <label>Project
             <select name="project"><option value="VA">Vida Aurum · Kokapet</option><option value="VL">Luxora One · Kukatpally</option><option value="MARS">Vida Mars · Concept</option><option value="">Not sure yet</option></select>
           </label>
