@@ -5,23 +5,24 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Vida Estates · Premium homes in Hyderabad</title>
 <meta name="description" content="Vida Estates builds premium homes in Kokapet and Kukatpally, Hyderabad, and hands them over on the date in your agreement. Book a site visit.">
-<meta name="theme-color" content="#1A1F24">
+<meta name="theme-color" content="#2B2B2B">
 <meta property="og:title" content="Vida Estates · Arrive on time">
 <meta property="og:description" content="Premium homes in Hyderabad, handed over on the date in your agreement.">
 <meta property="og:url" content="https://www.vidaestates.co.in/">
 <meta property="og:image" content="https://www.vidaestates.co.in/assets/hero-ending.jpg">
 <meta property="og:type" content="website">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 150'%3E%3Cpath d='M22,40 L60,128 L98,40' fill='none' stroke='%231A1F24' stroke-width='9'/%3E%3Ccircle cx='60' cy='18' r='11' fill='%23B98A4E'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 150'%3E%3Cpath d='M22,40 L60,128 L98,40' fill='none' stroke='%232B2B2B' stroke-width='9'/%3E%3Ccircle cx='60' cy='18' r='11' fill='%23B08A55'/%3E%3C/svg%3E">
 <link rel="preload" as="image" href="assets/hero-poster.webp" fetchpriority="high">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400&family=Jost:wght@300;400;500&family=Tenor+Sans&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 :root{
-  --canvas:#ECEAE5; --panel:#F6F4F0; --ink:#1A1F24; --ink-2:#2B3238;
-  --accent:#B98A4E; --accent-hover:#A27640; --accent-muted:rgba(185,138,78,.28);
-  --text-secondary:#5C6166; --line:#D9D5CD; --ivory:#F6F2EA;
-  --display:"Tenor Sans","Avenir Next",sans-serif; --body:"Jost","Avenir Next",system-ui,sans-serif; --mono:"IBM Plex Mono",ui-monospace,monospace;
+  /* Vida Estates brand book (Nov 2026): graphite + limestone carry the page, brass is a detail (≤10%). */
+  --canvas:#E8E3DA; --panel:#F4F1EC; --ink:#2B2B2B; --ink-2:#3A3936;
+  --accent:#B08A55; --accent-hover:#9A7744; --accent-muted:rgba(176,138,85,.28); --brass-text:#7A5A2A;
+  --text-secondary:#5F5B54; --line:#D6CFC3; --ivory:#F4F1EC;
+  --display:"Cormorant Garamond","Cormorant",Georgia,serif; --body:"Jost","Avenir Next",system-ui,sans-serif; --mono:"Jost","Avenir Next",system-ui,sans-serif;
   --ease:cubic-bezier(.22,.61,.36,1); --ease-out:cubic-bezier(.16,1,.3,1);
   --tshadow:0 1px 2px rgba(5,5,10,.9),0 3px 12px rgba(5,5,10,.7),0 10px 44px rgba(5,5,10,.7);
 }
@@ -36,8 +37,11 @@ a{color:inherit}
 .skip:focus{top:16px}
 :focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 .wrap{width:min(1180px,100% - 40px);margin-inline:auto}
-.eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--text-secondary)}
-h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:.01em;line-height:1.08}
+.eyebrow{font-family:var(--mono);font-weight:500;font-size:.7rem;letter-spacing:.26em;text-transform:uppercase;color:var(--brass-text)}
+h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:0;line-height:1.04}
+h2{font-size-adjust:none}
+.sig{font-size:clamp(2rem,3.4vw,2.8rem);line-height:1.1;margin:2.4rem 0 .4rem}.endorse{font-weight:500;font-size:.66rem;letter-spacing:.26em;text-transform:uppercase}
+.tag{font-family:var(--display);font-style:italic;font-weight:400}.tag em{font-style:italic;color:var(--accent)}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:.6rem;min-height:48px;padding:0 1.6rem;border-radius:999px;background:var(--accent);color:#fff;font:500 .82rem var(--body);letter-spacing:.16em;text-transform:uppercase;text-decoration:none;border:0;cursor:pointer;transition:background .35s var(--ease),transform .35s var(--ease)}
 .btn:hover{background:var(--accent-hover);transform:translateY(-1px)}
 .btn.ghost{background:transparent;color:inherit;border:1px solid currentColor}
@@ -45,7 +49,7 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:.01em;line-he
 @media (pointer:coarse){.btn{min-height:48px}}
 
 /* ───── fixed environment layer ───── */
-.env{position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(60% 50% at 20% 10%,rgba(185,138,78,.10),transparent 70%),radial-gradient(50% 60% at 90% 80%,rgba(110,128,134,.10),transparent 70%),var(--canvas);animation:envdrift 80s ease-in-out infinite alternate;animation-delay:-20s}
+.env{position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(60% 50% at 20% 10%,rgba(176,138,85,.10),transparent 70%),radial-gradient(50% 60% at 90% 80%,rgba(110,128,134,.10),transparent 70%),var(--canvas);animation:envdrift 80s ease-in-out infinite alternate;animation-delay:-20s}
 @keyframes envdrift{to{background-position:30% 20%,60% 40%,0 0;filter:hue-rotate(-6deg)}}
 
 /* ───── nav ───── */
@@ -99,7 +103,7 @@ h1,h2,h3{font-family:var(--display);font-weight:400;letter-spacing:.01em;line-he
 .cue::after{content:"";display:block;width:1px;height:34px;margin:10px auto 0;background:linear-gradient(#fff,transparent);animation:cue 2.4s var(--ease) infinite;animation-delay:-.6s}
 @keyframes cue{0%{transform:scaleY(0);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}51%{transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
 .sun{position:absolute;left:clamp(16px,3vw,40px);top:50%;width:2px;height:28vh;transform:translateY(-50%);background:rgba(255,255,255,.18)}
-.sun i{position:absolute;left:50%;top:calc(var(--p,0)*100%);width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:var(--accent);box-shadow:0 0 18px rgba(185,138,78,.8)}
+.sun i{position:absolute;left:50%;top:calc(var(--p,0)*100%);width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:var(--accent);box-shadow:0 0 18px rgba(176,138,85,.8)}
 @media (max-height:560px){.cue,.sun{display:none}}
 
 /* static hero gate: must match GATES in JS exactly */
@@ -128,7 +132,7 @@ section{position:relative}
 .statement{text-align:center}
 .statement p{font-family:var(--display);font-size:clamp(1.7rem,3.4vw,2.8rem);line-height:1.3;max-width:24ch;margin:0 auto}
 .statement .sig{margin:2.6rem auto 0;width:14px;height:14px;border-radius:50%;background:var(--accent);animation:glow 5s ease-in-out infinite;animation-delay:-1.5s}
-@keyframes glow{50%{box-shadow:0 0 0 14px rgba(185,138,78,.12)}}
+@keyframes glow{50%{box-shadow:0 0 0 14px rgba(176,138,85,.12)}}
 
 .projects-head{display:flex;justify-content:space-between;align-items:end;gap:2rem;flex-wrap:wrap;margin-bottom:3rem}
 .projects-head h2{font-size:clamp(2.2rem,4vw,3.4rem)}
@@ -189,9 +193,9 @@ section{position:relative}
 .track .dot{position:relative;width:12px;height:12px;margin-top:-5px;border-radius:50%;background:var(--ink);border:1px solid rgba(246,242,234,.4);transition:background .4s,border-color .4s,transform .4s var(--ease)}
 .track .dot.done{background:var(--accent);border-color:var(--accent)}
 .track .dot.now{border-color:var(--accent);transform:scale(1.35);animation:pulse 4s ease-in-out infinite;animation-delay:-1s}
-@keyframes pulse{50%{box-shadow:0 0 0 8px rgba(185,138,78,.18)}}
+@keyframes pulse{50%{box-shadow:0 0 0 8px rgba(176,138,85,.18)}}
 .track .dot span{position:absolute;top:22px;left:50%;transform:translateX(-50%);white-space:nowrap;font-family:var(--mono);font-size:.62rem;letter-spacing:.06em;color:rgba(246,242,234,.6)}
-.track .handle{position:absolute;left:var(--fill,0%);top:-10px;width:22px;height:22px;margin-left:-11px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 6px rgba(185,138,78,.18),0 0 24px rgba(185,138,78,.5);transition:left .5s var(--ease),transform .3s var(--ease);pointer-events:none}
+.track .handle{position:absolute;left:var(--fill,0%);top:-10px;width:22px;height:22px;margin-left:-11px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 6px rgba(176,138,85,.18),0 0 24px rgba(176,138,85,.5);transition:left .5s var(--ease),transform .3s var(--ease);pointer-events:none}
 .track:hover .handle{transform:scale(1.12)}
 .scrubber{position:absolute;left:-11px;right:-11px;top:-22px;width:calc(100% + 22px);height:46px;margin:0;opacity:0;cursor:grab}
 .scrubber:active{cursor:grabbing}
@@ -287,7 +291,7 @@ body.paused *,body.paused *::before,body.paused *::after{animation-play-state:pa
 <header class="nav" id="nav">
   <div class="wrap">
     <a href="#top" class="logo" aria-label="Vida Estates home">
-      <svg viewBox="0 0 418 250" aria-hidden="true"><g transform="translate(40,60)"><g fill="none" stroke="currentColor" stroke-width="5.5" stroke-miterlimit="20"><path d="M0,0 L38,100 L76,0"/><path d="M118,0 V100"/><path d="M160,0 H178 A50,50 0 0 1 178,100 H160 Z"/><path d="M262,100 L300,0 L338,100"/></g><circle cx="118" cy="-26" r="8" fill="#B98A4E"/><path d="M0,128 H338" stroke="#B98A4E" stroke-width="1.6"/><text x="169" y="162" text-anchor="middle" font-family="Jost, Avenir Next, sans-serif" font-size="17" letter-spacing="16" fill="currentColor">ESTATES</text></g></svg>
+      <svg viewBox="0 0 418 250" aria-hidden="true"><g transform="translate(40,60)"><g fill="none" stroke="currentColor" stroke-width="5.5" stroke-miterlimit="20"><path d="M0,0 L38,100 L76,0"/><path d="M118,0 V100"/><path d="M160,0 H178 A50,50 0 0 1 178,100 H160 Z"/><path d="M262,100 L300,0 L338,100"/></g><circle cx="118" cy="-26" r="8" fill="#B08A55"/><path d="M0,128 H338" stroke="#B08A55" stroke-width="1.6"/><text x="0" y="162" font-family="Jost, Avenir Next, sans-serif" font-size="17" letter-spacing="16.1" fill="currentColor">ESTATES</text></g></svg>
     </a>
     <nav aria-label="Main">
       <ul>
@@ -548,11 +552,13 @@ body.paused *,body.paused *::before,body.paused *::after{animation-play-state:pa
 <footer>
   <div class="wrap">
     <div class="top">
-      <a href="#top" class="logo" aria-label="Vida Estates, back to top"><svg viewBox="0 0 418 250" aria-hidden="true"><g transform="translate(40,60)"><g fill="none" stroke="currentColor" stroke-width="5.5" stroke-miterlimit="20"><path d="M0,0 L38,100 L76,0"/><path d="M118,0 V100"/><path d="M160,0 H178 A50,50 0 0 1 178,100 H160 Z"/><path d="M262,100 L300,0 L338,100"/></g><circle cx="118" cy="-26" r="8" fill="#B98A4E"/><path d="M0,128 H338" stroke="#B98A4E" stroke-width="1.6"/><text x="169" y="162" text-anchor="middle" font-family="Jost, Avenir Next, sans-serif" font-size="17" letter-spacing="16" fill="currentColor">ESTATES</text></g></svg></a>
+      <a href="#top" class="logo" aria-label="Vida Estates, back to top"><svg viewBox="0 0 418 250" aria-hidden="true"><g transform="translate(40,60)"><g fill="none" stroke="currentColor" stroke-width="5.5" stroke-miterlimit="20"><path d="M0,0 L38,100 L76,0"/><path d="M118,0 V100"/><path d="M160,0 H178 A50,50 0 0 1 178,100 H160 Z"/><path d="M262,100 L300,0 L338,100"/></g><circle cx="118" cy="-26" r="8" fill="#B08A55"/><path d="M0,128 H338" stroke="#B08A55" stroke-width="1.6"/><text x="0" y="162" font-family="Jost, Avenir Next, sans-serif" font-size="17" letter-spacing="16.1" fill="currentColor">ESTATES</text></g></svg></a>
       <ul><li>Sales office address, Kokapet, Hyderabad</li><li><a href="tel:+910000000000">+91 00000 00000</a></li><li><a href="mailto:hello@vidaestates.com">hello@vidaestates.com</a></li></ul>
       <ul><li><a href="#projects">Projects</a></li><li><a href="#live">Progress</a></li><li><a href="#visit">Book a visit</a></li><li><a data-os="/login" href="http://localhost:3100/login">Staff login</a></li></ul>
     </div>
+    <p class="tag sig">Elevating <em>life</em>.</p>
     <div class="legal">
+      <span class="endorse">A Vbridge Ventures development</span>
       <span>Images are artist's impressions. TS RERA registration numbers are shown for each project once approved.</span>
       <span>© <span id="yr"></span> Vida Estates</span>
     </div>
